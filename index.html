@@ -4,12 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Exploradores do Brasil: Como Funciona o Nosso País!</title>
+  
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Fontes Google lúdicas -->
+  
+  <!-- Leaflet CSS & JS (Mapa Geográfico Real do Mundo) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Fontes Google Lúdicas -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+
   <style>
     body {
       font-family: 'Nunito', sans-serif;
@@ -17,31 +24,43 @@
     h1, h2, h3, .brand-font {
       font-family: 'Fredoka', cursive;
     }
-    .state-path {
+    #map {
+      height: 480px;
+      width: 100%;
+      border-radius: 1.5rem;
+      z-index: 10;
+    }
+    .custom-div-icon {
+      background: transparent;
+      border: none;
+    }
+    .state-marker {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-family: 'Fredoka', cursive;
+      font-weight: bold;
+      font-size: 11px;
+      border-radius: 9999px;
+      border: 2px solid white;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
       cursor: pointer;
-      stroke: #ffffff;
-      stroke-width: 1.5px;
       transition: all 0.2s ease-in-out;
     }
-    .state-path:hover {
-      filter: brightness(1.25) drop-shadow(0px 4px 6px rgba(0,0,0,0.25));
-      stroke: #0f172a;
-      stroke-width: 2px;
+    .state-marker:hover {
+      transform: scale(1.25);
+      z-index: 999 !important;
+      border-color: #0f172a;
     }
-    .state-active {
-      stroke: #0f172a !important;
-      stroke-width: 3px !important;
-      filter: brightness(1.15) drop-shadow(0px 6px 12px rgba(0,0,0,0.3));
+    .marker-df {
+      background-color: #e11d48 !important;
+      box-shadow: 0 0 15px rgba(225, 29, 72, 0.8) !important;
+      animation: pulse 1.5s infinite;
     }
-    .state-label {
-      font-family: 'Fredoka', cursive;
-      font-size: 11px;
-      font-weight: bold;
-      fill: #ffffff;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
-      pointer-events: none;
-      text-anchor: middle;
-      dominant-baseline: central;
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); }
     }
   </style>
 </head>
@@ -76,18 +95,20 @@
   <!-- Conteúdo Principal -->
   <main class="max-w-6xl mx-auto w-full flex-grow p-4 md:p-6">
 
-    <!-- ABA 1: MAPA CARTOGRÁFICO REAL -->
+    <!-- ============================================== -->
+    <!-- ABA 1: MAPA GEOGRÁFICO REAL DO BRASIL -->
+    <!-- ============================================== -->
     <section id="section-mapa" class="space-y-6">
       
       <div class="text-center max-w-2xl mx-auto">
-        <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Mapa Político Real</span>
-        <h2 class="text-2xl md:text-3xl font-bold text-emerald-900 mt-2">Explora os 26 Estados + o Distrito Federal!</h2>
-        <p class="text-slate-600 text-sm mt-1">Clica em qualquer estado do mapa ou escolhe uma região para entender quem cuida do quê.</p>
+        <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Geografia Real</span>
+        <h2 class="text-2xl md:text-3xl font-bold text-emerald-900 mt-2">Explora o Território Brasileiro!</h2>
+        <p class="text-slate-600 text-sm mt-1">Clica nos círculos de cada estado ou usa os filtros de regiões para descobrir quem administra cada pedaço do Brasil.</p>
       </div>
 
-      <!-- Filtros Rápidos de Regiões -->
+      <!-- Filtros de Regiões -->
       <div class="flex flex-wrap items-center justify-center gap-2">
-        <span class="text-xs font-bold text-slate-500 mr-1">Filtrar Região:</span>
+        <span class="text-xs font-bold text-slate-500 mr-1">Regiões:</span>
         <button onclick="filterRegion('TODAS')" class="text-xs font-bold px-3.5 py-1.5 rounded-full bg-slate-800 text-white shadow-sm hover:scale-105 transition">Todos</button>
         <button onclick="filterRegion('Norte')" class="text-xs font-bold px-3.5 py-1.5 rounded-full bg-emerald-500 text-white shadow-sm hover:scale-105 transition">Norte 🌳</button>
         <button onclick="filterRegion('Nordeste')" class="text-xs font-bold px-3.5 py-1.5 rounded-full bg-amber-500 text-white shadow-sm hover:scale-105 transition">Nordeste ☀️</button>
@@ -98,140 +119,22 @@
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        <!-- Contêiner do Mapa SVG Realista Embutido -->
-        <div class="lg:col-span-7 bg-white rounded-3xl p-4 md:p-6 shadow-md border-2 border-emerald-100 flex flex-col items-center relative">
+        <!-- Mapa Real Leaflet -->
+        <div class="lg:col-span-7 bg-white rounded-3xl p-3 shadow-md border-2 border-emerald-100 flex flex-col items-center">
+          <div id="map" class="shadow-inner"></div>
           
-          <div class="w-full flex justify-center">
-            <!-- SVG Cartográfico Embutido do Brasil -->
-            <svg id="brazil-svg" viewBox="0 0 620 620" class="w-full max-w-[560px] h-auto drop-shadow-sm select-none">
-              
-              <!-- REGIÃO NORTE (Verde) -->
-              <!-- RR -->
-              <path id="uf-RR" class="state-path" fill="#10b981" onclick="selectState('RR')" d="M 200,45 L 235,35 L 245,75 L 225,120 L 195,115 L 180,80 Z"/>
-              <text x="215" y="75" class="state-label">RR</text>
-
-              <!-- AP -->
-              <path id="uf-AP" class="state-path" fill="#10b981" onclick="selectState('AP')" d="M 345,65 L 375,60 L 370,115 L 340,110 Z"/>
-              <text x="358" y="85" class="state-label">AP</text>
-
-              <!-- AM -->
-              <path id="uf-AM" class="state-path" fill="#10b981" onclick="selectState('AM')" d="M 65,115 L 175,75 L 195,115 L 225,120 L 235,160 L 210,210 L 130,220 L 80,185 Z"/>
-              <text x="145" y="150" class="state-label text-sm">AM</text>
-
-              <!-- PA -->
-              <path id="uf-PA" class="state-path" fill="#10b981" onclick="selectState('PA')" d="M 235,80 L 345,65 L 340,110 L 385,130 L 375,195 L 330,225 L 275,225 L 235,160 Z"/>
-              <text x="305" y="155" class="state-label text-sm">PA</text>
-
-              <!-- AC -->
-              <path id="uf-AC" class="state-path" fill="#10b981" onclick="selectState('AC')" d="M 25,185 L 80,185 L 95,220 L 45,235 Z"/>
-              <text x="60" y="210" class="state-label">AC</text>
-
-              <!-- RO -->
-              <path id="uf-RO" class="state-path" fill="#10b981" onclick="selectState('RO')" d="M 130,220 L 175,215 L 180,265 L 135,270 Z"/>
-              <text x="155" y="245" class="state-label">RO</text>
-
-              <!-- TO -->
-              <path id="uf-TO" class="state-path" fill="#10b981" onclick="selectState('TO')" d="M 330,200 L 360,195 L 360,285 L 325,290 L 325,225 Z"/>
-              <text x="342" y="245" class="state-label">TO</text>
-
-              <!-- REGIÃO NORDESTE (Amarelo / Âmbar) -->
-              <!-- MA -->
-              <path id="uf-MA" class="state-path" fill="#f59e0b" onclick="selectState('MA')" d="M 375,135 L 425,145 L 415,215 L 365,200 Z"/>
-              <text x="395" y="175" class="state-label">MA</text>
-
-              <!-- PI -->
-              <path id="uf-PI" class="state-path" fill="#f59e0b" onclick="selectState('PI')" d="M 425,145 L 455,165 L 435,245 L 410,240 L 415,215 Z"/>
-              <text x="430" y="200" class="state-label">PI</text>
-
-              <!-- CE -->
-              <path id="uf-CE" class="state-path" fill="#f59e0b" onclick="selectState('CE')" d="M 455,150 L 495,155 L 490,195 L 455,180 Z"/>
-              <text x="475" y="172" class="state-label">CE</text>
-
-              <!-- RN -->
-              <path id="uf-RN" class="state-path" fill="#f59e0b" onclick="selectState('RN')" d="M 495,155 L 535,165 L 520,185 L 490,185 Z"/>
-              <text x="510" y="172" class="state-label text-[10px]">RN</text>
-
-              <!-- PB -->
-              <path id="uf-PB" class="state-path" fill="#f59e0b" onclick="selectState('PB')" d="M 490,185 L 535,185 L 530,205 L 485,200 Z"/>
-              <text x="510" y="195" class="state-label text-[10px]">PB</text>
-
-              <!-- PE -->
-              <path id="uf-PE" class="state-path" fill="#f59e0b" onclick="selectState('PE')" d="M 445,205 L 530,205 L 525,225 L 440,225 Z"/>
-              <text x="485" y="215" class="state-label text-[10px]">PE</text>
-
-              <!-- AL -->
-              <path id="uf-AL" class="state-path" fill="#f59e0b" onclick="selectState('AL')" d="M 495,225 L 525,225 L 515,245 L 490,240 Z"/>
-              <text x="508" y="235" class="state-label text-[9px]">AL</text>
-
-              <!-- SE -->
-              <path id="uf-SE" class="state-path" fill="#f59e0b" onclick="selectState('SE')" d="M 480,240 L 510,245 L 500,260 L 475,255 Z"/>
-              <text x="492" y="250" class="state-label text-[9px]">SE</text>
-
-              <!-- BA -->
-              <path id="uf-BA" class="state-path" fill="#f59e0b" onclick="selectState('BA')" d="M 385,230 L 445,225 L 495,245 L 485,325 L 415,335 L 380,290 Z"/>
-              <text x="440" y="280" class="state-label text-sm">BA</text>
-
-              <!-- REGIÃO CENTRO-OESTE (Azul Céu) -->
-              <!-- MT -->
-              <path id="uf-MT" class="state-path" fill="#0ea5e9" onclick="selectState('MT')" d="M 185,215 L 275,225 L 315,280 L 270,345 L 210,340 L 180,265 Z"/>
-              <text x="245" y="285" class="state-label text-sm">MT</text>
-
-              <!-- GO -->
-              <path id="uf-GO" class="state-path" fill="#0ea5e9" onclick="selectState('GO')" d="M 315,280 L 360,285 L 365,355 L 310,365 L 275,340 Z"/>
-              <text x="325" y="325" class="state-label">GO</text>
-
-              <!-- DF (Distrito Federal com Pulsar) -->
-              <circle id="uf-DF" cx="342" cy="318" r="9" fill="#e11d48" stroke="#ffffff" stroke-width="2.5" class="cursor-pointer animate-pulse" onclick="selectState('DF')"/>
-              <text x="342" y="318" class="state-label text-[8px]">DF</text>
-
-              <!-- MS -->
-              <path id="uf-MS" class="state-path" fill="#0ea5e9" onclick="selectState('MS')" d="M 220,345 L 285,345 L 290,425 L 235,420 Z"/>
-              <text x="260" y="385" class="state-label">MS</text>
-
-              <!-- REGIÃO SUDESTE (Laranja) -->
-              <!-- MG -->
-              <path id="uf-MG" class="state-path" fill="#f97316" onclick="selectState('MG')" d="M 365,315 L 445,335 L 435,405 L 365,415 L 340,365 Z"/>
-              <text x="395" y="365" class="state-label text-sm">MG</text>
-
-              <!-- ES -->
-              <path id="uf-ES" class="state-path" fill="#f97316" onclick="selectState('ES')" d="M 445,345 L 470,355 L 455,395 L 435,390 Z"/>
-              <text x="452" y="372" class="state-label text-[10px]">ES</text>
-
-              <!-- RJ -->
-              <path id="uf-RJ" class="state-path" fill="#f97316" onclick="selectState('RJ')" d="M 405,405 L 450,400 L 435,425 L 395,420 Z"/>
-              <text x="425" y="412" class="state-label text-[10px]">RJ</text>
-
-              <!-- SP -->
-              <path id="uf-SP" class="state-path" fill="#f97316" onclick="selectState('SP')" d="M 290,390 L 365,400 L 365,445 L 295,440 Z"/>
-              <text x="330" y="420" class="state-label">SP</text>
-
-              <!-- REGIÃO SUL (Roxo / Violeta) -->
-              <!-- PR -->
-              <path id="uf-PR" class="state-path" fill="#8b5cf6" onclick="selectState('PR')" d="M 285,440 L 350,445 L 340,485 L 270,475 Z"/>
-              <text x="310" y="462" class="state-label">PR</text>
-
-              <!-- SC -->
-              <path id="uf-SC" class="state-path" fill="#8b5cf6" onclick="selectState('SC')" d="M 280,480 L 345,485 L 335,515 L 275,510 Z"/>
-              <text x="310" y="498" class="state-label">SC</text>
-
-              <!-- RS -->
-              <path id="uf-RS" class="state-path" fill="#8b5cf6" onclick="selectState('RS')" d="M 265,515 L 335,515 L 320,580 L 250,575 Z"/>
-              <text x="290" y="545" class="state-label">RS</text>
-
-            </svg>
-          </div>
-
           <!-- Legenda de Cores -->
-          <div class="mt-4 flex flex-wrap justify-center gap-3 text-[11px] font-bold text-slate-600">
+          <div class="mt-3 flex flex-wrap justify-center gap-3 text-[11px] font-bold text-slate-600">
             <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Norte</div>
             <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-amber-500"></span> Nordeste</div>
             <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-sky-500"></span> Centro-Oeste</div>
             <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-orange-500"></span> Sudeste</div>
             <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-violet-500"></span> Sul</div>
+            <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-rose-600"></span> DF (Brasília)</div>
           </div>
         </div>
 
-        <!-- Painel Lateral: Detalhes do Estado Selecionado -->
+        <!-- Painel Lateral de Informações -->
         <div class="lg:col-span-5 space-y-4">
           <div id="state-card" class="bg-white rounded-3xl p-6 shadow-md border-l-8 border-sky-500 transition-all">
             <div class="flex items-center justify-between mb-2">
@@ -244,28 +147,28 @@
 
             <div id="state-gov-info" class="mt-4 space-y-3 text-xs leading-relaxed text-slate-700 bg-slate-50 p-4 rounded-2xl border border-slate-100">
               <p><b>👑 No Nível Federal:</b> Aqui no Distrito Federal trabalham o <b>Presidente da República</b>, os <b>Deputados Federais</b>, <b>Senadores</b> e os <b>Juízes do STF</b>, que cuidam de todo o país.</p>
-              <p><b>🗺️ No Nível Estadual/Distrital:</b> O Governador e os Deputados Distritais cuidam das escolas e hospitais de toda a região do DF.</p>
+              <p><b>🗺️ No Nível Distrital:</b> O Governador e os Deputados Distritais cuidam das escolas, polícia e hospitais de todo o DF.</p>
             </div>
 
             <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500">
-              💡 <i>Dica: Clica noutros estados no mapa (como São Paulo, Amazonas ou Bahia) para ver as diferenças!</i>
+              💡 <i>Podes dar zoom (+ / -) e arrastar o mapa para ver todos os estados!</i>
             </div>
           </div>
 
           <!-- Cards dos 3 Níveis -->
           <div class="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-3xl p-5 shadow-md">
             <h4 class="font-bold text-sm flex items-center gap-2">
-              <span>🎯</span> Como se divide o governo no Brasil?
+              <span>🎯</span> Os 3 Níveis de Governo:
             </h4>
             <div class="mt-3 space-y-2 text-xs text-emerald-50">
               <div class="bg-white/10 p-2.5 rounded-xl">
-                <b>1. Governo Federal:</b> O país inteiro (Presidente e Congresso).
+                <b>1. Governo Federal (País Todo):</b> Presidente e Congresso Nacional em Brasília.
               </div>
               <div class="bg-white/10 p-2.5 rounded-xl">
-                <b>2. Governo Estadual:</b> Cada um dos 26 estados + DF (Governador e Assembleia).
+                <b>2. Governo Estadual (Região):</b> Governador e Deputados Estaduais.
               </div>
               <div class="bg-white/10 p-2.5 rounded-xl">
-                <b>3. Governo Municipal:</b> Mais de 5.500 cidades (Prefeito e Vereadores).
+                <b>3. Governo Municipal (Cidade):</b> Prefeito e Vereadores.
               </div>
             </div>
           </div>
@@ -274,12 +177,14 @@
       </div>
     </section>
 
+    <!-- ============================================== -->
     <!-- ABA 2: OS 3 PODERES -->
+    <!-- ============================================== -->
     <section id="section-poderes" class="space-y-6 hidden">
       <div class="text-center max-w-2xl mx-auto">
         <span class="bg-teal-100 text-teal-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Equilíbrio da Democracia</span>
         <h2 class="text-2xl md:text-3xl font-bold text-teal-900 mt-2">O Trio de Superpoderes</h2>
-        <p class="text-slate-600 text-sm mt-1">Ninguém governa sozinho! Os 3 poderes funcionam como uma equipa onde cada um tem uma tarefa especial.</p>
+        <p class="text-slate-600 text-sm mt-1">Ninguém governa sozinho! Cada poder tem uma missão para garantir que tudo seja justo.</p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -290,7 +195,7 @@
             <h3 class="text-xl font-bold text-violet-900">Poder Legislativo</h3>
             <p class="text-xs font-bold uppercase tracking-wider text-violet-600 mb-3">"Os Criadores das Regras"</p>
             <p class="text-slate-600 text-sm leading-relaxed">
-              Ouvem as necessidades das pessoas, discutem soluções e criam as <b>leis</b> para organizar e proteger a sociedade.
+              Ouvem o povo, conversam sobre melhorias e criam as <b>leis</b> para proteger as pessoas e a natureza.
             </p>
           </div>
           <div class="mt-6 bg-violet-50 p-3.5 rounded-2xl text-xs text-violet-900 space-y-1">
@@ -308,7 +213,7 @@
             <h3 class="text-xl font-bold text-orange-900">Poder Executivo</h3>
             <p class="text-xs font-bold uppercase tracking-wider text-orange-600 mb-3">"Quem Coloca em Prática"</p>
             <p class="text-slate-600 text-sm leading-relaxed">
-              Administram os recursos públicos, constroem escolas e hospitais, asfaltam estradas e contratam serviços essenciais.
+              Administram os recursos, constroem escolas, asfaltam ruas e compram remédios para os postinhos.
             </p>
           </div>
           <div class="mt-6 bg-orange-50 p-3.5 rounded-2xl text-xs text-orange-900 space-y-1">
@@ -326,24 +231,25 @@
             <h3 class="text-xl font-bold text-rose-900">Poder Judiciário</h3>
             <p class="text-xs font-bold uppercase tracking-wider text-rose-600 mb-3">"Os Árbitros da Justiça"</p>
             <p class="text-slate-600 text-sm leading-relaxed">
-              Garantem que todos cumpram a Constituição e as leis aprovadas, resolvendo os conflitos com justiça e neutralidade.
+              Garantem que todo mundo obedeça às regras e resolvem conflitos com base na Constituição.
             </p>
           </div>
           <div class="mt-6 bg-rose-50 p-3.5 rounded-2xl text-xs text-rose-900 space-y-1">
             <span class="font-bold block mb-1">Quem faz parte:</span>
             <div>🧑‍⚖️ <b>Juízes de Direito</b></div>
-            <div>🏛️ <b>Tribunais Regionais</b></div>
+            <div>🏛️ <b>Tribunais de Justiça</b></div>
             <div>⭐ <b>STF (Supremo Tribunal Federal)</b></div>
           </div>
         </div>
       </div>
     </section>
 
+    <!-- ============================================== -->
     <!-- ABA 3: SUPER QUIZ INTERATIVO -->
+    <!-- ============================================== -->
     <section id="section-quiz" class="space-y-6 hidden">
       <div class="max-w-2xl mx-auto bg-white rounded-3xl p-6 md:p-8 shadow-lg border-4 border-amber-300">
         
-        <!-- Cabeçalho do Quiz -->
         <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
           <div>
             <span class="text-xs font-bold uppercase text-amber-600 tracking-wider">Desafio Cidadão</span>
@@ -376,7 +282,7 @@
         <!-- Fim de Jogo -->
         <div id="quiz-end" class="text-center py-8 space-y-4 hidden">
           <div class="text-6xl animate-bounce">🏆</div>
-          <h3 class="text-2xl font-bold text-slate-800">Parabéns, Pequeno Grande Cidadão!</h3>
+          <h3 class="text-2xl font-bold text-slate-800">Parabéns, Jovem Cidadão!</h3>
           <p id="final-message" class="text-slate-600 text-sm">Completaste a tua missão com nota máxima!</p>
           <button onclick="restartQuiz()" class="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-full shadow-md transition">
             Jogar Novamente 🔄
@@ -393,36 +299,37 @@
     <p>💡 Feito com carinho para ensinar Geografia e Cidadania para crianças do Brasil.</p>
   </footer>
 
-  <!-- Lógica JavaScript -->
+  <!-- Lógica JavaScript com Leaflet e Mapa Real -->
   <script>
+    // 1. Dados dos 26 Estados + DF com Coordenadas Geográficas Reais
     const statesData = {
-      "AC": { name: "Acre", capital: "Rio Branco", region: "Norte" },
-      "AL": { name: "Alagoas", capital: "Maceió", region: "Nordeste" },
-      "AP": { name: "Amapá", capital: "Macapá", region: "Norte" },
-      "AM": { name: "Amazonas", capital: "Manaus", region: "Norte" },
-      "BA": { name: "Bahia", capital: "Salvador", region: "Nordeste" },
-      "CE": { name: "Ceará", capital: "Fortaleza", region: "Nordeste" },
-      "DF": { name: "Distrito Federal", capital: "Brasília (Capital Nacional)", region: "Centro-Oeste" },
-      "ES": { name: "Espírito Santo", capital: "Vitória", region: "Sudeste" },
-      "GO": { name: "Goiás", capital: "Goiânia", region: "Centro-Oeste" },
-      "MA": { name: "Maranhão", capital: "São Luís", region: "Nordeste" },
-      "MT": { name: "Mato Grosso", capital: "Cuiabá", region: "Centro-Oeste" },
-      "MS": { name: "Mato Grosso do Sul", capital: "Campo Grande", region: "Centro-Oeste" },
-      "MG": { name: "Minas Gerais", capital: "Belo Horizonte", region: "Sudeste" },
-      "PA": { name: "Pará", capital: "Belém", region: "Norte" },
-      "PB": { name: "Paraíba", capital: "João Pessoa", region: "Nordeste" },
-      "PR": { name: "Paraná", capital: "Curitiba", region: "Sul" },
-      "PE": { name: "Pernambuco", capital: "Recife", region: "Nordeste" },
-      "PI": { name: "Piauí", capital: "Teresina", region: "Nordeste" },
-      "RJ": { name: "Rio de Janeiro", capital: "Rio de Janeiro", region: "Sudeste" },
-      "RN": { name: "Rio Grande do Norte", capital: "Natal", region: "Nordeste" },
-      "RS": { name: "Rio Grande do Sul", capital: "Porto Alegre", region: "Sul" },
-      "RO": { name: "Rondônia", capital: "Porto Velho", region: "Norte" },
-      "RR": { name: "Roraima", capital: "Boa Vista", region: "Norte" },
-      "SC": { name: "Santa Catarina", capital: "Florianópolis", region: "Sul" },
-      "SP": { name: "São Paulo", capital: "São Paulo", region: "Sudeste" },
-      "SE": { name: "Sergipe", capital: "Aracaju", region: "Nordeste" },
-      "TO": { name: "Tocantins", capital: "Palmas", region: "Norte" }
+      "AC": { name: "Acre", capital: "Rio Branco", region: "Norte", lat: -9.0238, lng: -70.8120, color: "#10b981" },
+      "AL": { name: "Alagoas", capital: "Maceió", region: "Nordeste", lat: -9.5713, lng: -36.7820, color: "#f59e0b" },
+      "AP": { name: "Amapá", capital: "Macapá", region: "Norte", lat: 1.4140, lng: -51.7730, color: "#10b981" },
+      "AM": { name: "Amazonas", capital: "Manaus", region: "Norte", lat: -3.4168, lng: -65.8561, color: "#10b981" },
+      "BA": { name: "Bahia", capital: "Salvador", region: "Nordeste", lat: -12.9714, lng: -41.5454, color: "#f59e0b" },
+      "CE": { name: "Ceará", capital: "Fortaleza", region: "Nordeste", lat: -5.4984, lng: -39.3206, color: "#f59e0b" },
+      "DF": { name: "Distrito Federal", capital: "Brasília (Capital Nacional)", region: "Centro-Oeste", lat: -15.7975, lng: -47.8919, color: "#e11d48" },
+      "ES": { name: "Espírito Santo", capital: "Vitória", region: "Sudeste", lat: -19.1834, lng: -40.3089, color: "#f97316" },
+      "GO": { name: "Goiás", capital: "Goiânia", region: "Centro-Oeste", lat: -15.8270, lng: -49.8362, color: "#0ea5e9" },
+      "MA": { name: "Maranhão", capital: "São Luís", region: "Nordeste", lat: -4.9609, lng: -45.2744, color: "#f59e0b" },
+      "MT": { name: "Mato Grosso", capital: "Cuiabá", region: "Centro-Oeste", lat: -12.6819, lng: -56.9211, color: "#0ea5e9" },
+      "MS": { name: "Mato Grosso do Sul", capital: "Campo Grande", region: "Centro-Oeste", lat: -20.7722, lng: -54.7852, color: "#0ea5e9" },
+      "MG": { name: "Minas Gerais", capital: "Belo Horizonte", region: "Sudeste", lat: -18.5122, lng: -44.5550, color: "#f97316" },
+      "PA": { name: "Pará", capital: "Belém", region: "Norte", lat: -3.7932, lng: -52.4820, color: "#10b981" },
+      "PB": { name: "Paraíba", capital: "João Pessoa", region: "Nordeste", lat: -7.2399, lng: -36.7820, color: "#f59e0b" },
+      "PR": { name: "Paraná", capital: "Curitiba", region: "Sul", lat: -24.89, lng: -51.55, color: "#8b5cf6" },
+      "PE": { name: "Pernambuco", capital: "Recife", region: "Nordeste", lat: -8.8137, lng: -36.9541, color: "#f59e0b" },
+      "PI": { name: "Piauí", capital: "Teresina", region: "Nordeste", lat: -7.7183, lng: -42.7289, color: "#f59e0b" },
+      "RJ": { name: "Rio de Janeiro", capital: "Rio de Janeiro", region: "Sudeste", lat: -22.9068, lng: -43.1729, color: "#f97316" },
+      "RN": { name: "Rio Grande do Norte", capital: "Natal", region: "Nordeste", lat: -5.7945, lng: -36.5616, color: "#f59e0b" },
+      "RS": { name: "Rio Grande do Sul", capital: "Porto Alegre", region: "Sul", lat: -30.0346, lng: -51.2177, color: "#8b5cf6" },
+      "RO": { name: "Rondônia", capital: "Porto Velho", region: "Norte", lat: -11.5057, lng: -63.5806, color: "#10b981" },
+      "RR": { name: "Roraima", capital: "Boa Vista", region: "Norte", lat: 2.7376, lng: -62.0751, color: "#10b981" },
+      "SC": { name: "Santa Catarina", capital: "Florianópolis", region: "Sul", lat: -27.2423, lng: -50.2189, color: "#8b5cf6" },
+      "SP": { name: "São Paulo", capital: "São Paulo", region: "Sudeste", lat: -23.5505, lng: -46.6333, color: "#f97316" },
+      "SE": { name: "Sergipe", capital: "Aracaju", region: "Nordeste", lat: -10.5741, lng: -37.3857, color: "#f59e0b" },
+      "TO": { name: "Tocantins", capital: "Palmas", region: "Norte", lat: -10.1753, lng: -48.2982, color: "#10b981" }
     };
 
     const regionBorderColors = {
@@ -441,13 +348,52 @@
       "Sul": "bg-violet-100 text-violet-800"
     };
 
+    let leafletMap;
+    let mapMarkers = {};
+
+    // 2. Inicialização do Mapa Geográfico Real
+    function initRealMap() {
+      // Centralizado geograficamente no Brasil
+      leafletMap = L.map('map', {
+        center: [-14.2350, -51.9253],
+        zoom: 4,
+        minZoom: 3,
+        maxZoom: 7
+      });
+
+      // Camada base bonita do OpenStreetMap
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+      }).addTo(leafletMap);
+
+      // Criar marcadores circulares interativos para cada estado
+      Object.keys(statesData).forEach(uf => {
+        const state = statesData[uf];
+        const isDF = (uf === 'DF');
+        const size = isDF ? 34 : 28;
+        
+        const customIcon = L.divIcon({
+          className: 'custom-div-icon',
+          html: `<div class="state-marker ${isDF ? 'marker-df' : ''}" style="width: ${size}px; height: ${size}px; background-color: ${state.color};">${uf}</div>`,
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2]
+        });
+
+        const marker = L.marker([state.lat, state.lng], { icon: customIcon }).addTo(leafletMap);
+        
+        marker.on('click', () => {
+          selectState(uf);
+          leafletMap.flyTo([state.lat, state.lng], 5, { duration: 0.8 });
+        });
+
+        mapMarkers[uf] = marker;
+      });
+    }
+
+    // 3. Atualizar Painel de Informações
     function selectState(uf) {
       const state = statesData[uf];
       if (!state) return;
-
-      document.querySelectorAll(".state-path, circle").forEach(el => el.classList.remove("state-active"));
-      const activeEl = document.getElementById(`uf-${uf}`);
-      if (activeEl) activeEl.classList.add("state-active");
 
       const card = document.getElementById("state-card");
       card.className = `bg-white rounded-3xl p-6 shadow-md border-l-8 ${regionBorderColors[state.region]} transition-all`;
@@ -469,23 +415,31 @@
       } else {
         govInfo.innerHTML = `
           <p><b>🗺️ No Nível Estadual (${state.name}):</b> O <b>Governador(a)</b> e os <b>Deputados Estaduais</b> administram as polícias estaduais, hospitais de referência e rodovias.</p>
-          <p><b>🏙️ No Nível Municipal:</b> Cada cidade deste estado tem o seu próprio <b>Prefeito(a)</b> e <b>Vereadores</b> cuidando dos bairros, escolas municipais e praças.</p>
+          <p><b>🏙️ No Nível Municipal:</b> Cada cidade de ${state.name} tem o seu próprio <b>Prefeito(a)</b> e <b>Vereadores</b> cuidando das praças, escolas municipais e postinhos locais.</p>
         `;
       }
     }
 
+    // 4. Filtrar por Região
     function filterRegion(reg) {
       Object.keys(statesData).forEach(uf => {
-        const path = document.getElementById(`uf-${uf}`);
-        if (!path) return;
-        if (reg === "TODAS" || statesData[uf].region === reg) {
-          path.style.opacity = "1";
+        const state = statesData[uf];
+        const marker = mapMarkers[uf];
+        if (!marker) return;
+
+        if (reg === "TODAS" || state.region === reg) {
+          marker.setOpacity(1);
         } else {
-          path.style.opacity = "0.2";
+          marker.setOpacity(0.15);
         }
       });
+
+      if (reg === "TODAS") {
+        leafletMap.flyTo([-14.2350, -51.9253], 4);
+      }
     }
 
+    // 5. Navegação das Abas
     function setTab(tab) {
       ['mapa', 'poderes', 'quiz'].forEach(t => {
         document.getElementById(`section-${t}`).classList.add('hidden');
@@ -496,20 +450,25 @@
       document.getElementById(`section-${tab}`).classList.remove('hidden');
       const activeBtn = document.getElementById(`btn-${tab}`);
       activeBtn.className = 'tab-btn px-4 py-2 rounded-full font-bold text-sm transition shadow-sm bg-white text-emerald-700';
+
+      if (tab === 'mapa' && leafletMap) {
+        setTimeout(() => leafletMap.invalidateSize(), 200);
+      }
     }
 
+    // 6. Super Quiz
     const quizQuestions = [
       {
         question: "Quem é o responsável por asfaltar a rua e cuidar da pracinha do teu bairro?",
         options: ["O(A) Prefeito(a) da Cidade", "O Presidente do País", "O Diretor da Escola", "O Juiz do Tribunal"],
         correct: 0,
-        explanation: "Muito bem! A Prefeitura (Nível Municipal) cuida das praças, da limpeza da rua e dos postos de saúde da cidade."
+        explanation: "Muito bem! A Prefeitura (Nível Municipal) cuida das praças, da limpeza da rua e dos postos de saúde."
       },
       {
         question: "Qual é a principal função do Poder Legislativo (Vereadores e Deputados)?",
         options: ["Julgar os crimes no tribunal", "Construir pontes e estradas", "Criar, debater e aprovar as leis", "Comandar as viaturas da polícia"],
         correct: 2,
-        explanation: "Excelente! O Poder Legislativo é a equipe responsável por escrever e votar as regras (leis) da sociedade."
+        explanation: "Excelente! O Poder Legislativo é o grupo responsável por escrever e votar as leis do país."
       },
       {
         question: "Onde fica a capital federal do Brasil, onde o Presidente trabalha?",
@@ -521,7 +480,7 @@
         question: "O que faz o Poder Judiciário (Juízes e Tribunais)?",
         options: ["Cria novos impostos", "Garante que todos cumpram a lei e a Constituição", "Pinta as salas de aula", "Escolhe o novo Prefeito"],
         correct: 1,
-        explanation: "Isso mesmo! O Judiciário funciona como o árbitro de futebol: confere se todo mundo está a jogar de acordo com as regras."
+        explanation: "Isso mesmo! O Judiciário funciona como o árbitro: garante que todos respeitem as regras e a Constituição."
       },
       {
         question: "Quantos Estados tem o Brasil além do Distrito Federal?",
@@ -593,6 +552,7 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
+      initRealMap();
       selectState('DF');
       renderQuestion();
     });

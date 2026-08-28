@@ -8,7 +8,7 @@
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- Leaflet CSS & JS (Mapa Geográfico Real do Mundo) -->
+  <!-- Leaflet CSS & JS (Mapa Cartográfico Real) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -25,42 +25,40 @@
       font-family: 'Fredoka', cursive;
     }
     #map {
-      height: 480px;
+      height: 500px;
       width: 100%;
       border-radius: 1.5rem;
       z-index: 10;
+      background-color: #e2e8f0;
     }
     .custom-div-icon {
       background: transparent;
       border: none;
     }
-    .state-marker {
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .df-marker {
+      background-color: #e11d48;
       color: white;
       font-family: 'Fredoka', cursive;
       font-weight: bold;
       font-size: 11px;
+      width: 32px;
+      height: 32px;
       border-radius: 9999px;
       border: 2px solid white;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 12px rgba(225, 29, 72, 0.9);
       cursor: pointer;
-      transition: all 0.2s ease-in-out;
-    }
-    .state-marker:hover {
-      transform: scale(1.25);
-      z-index: 999 !important;
-      border-color: #0f172a;
-    }
-    .marker-df {
-      background-color: #e11d48 !important;
-      box-shadow: 0 0 15px rgba(225, 29, 72, 0.8) !important;
       animation: pulse 1.5s infinite;
     }
     @keyframes pulse {
       0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.15); }
+      50% { transform: scale(1.2); }
+    }
+    .leaflet-interactive {
+      cursor: pointer;
+      transition: fill-opacity 0.2s, stroke-width 0.2s;
     }
   </style>
 </head>
@@ -80,7 +78,7 @@
       <!-- Navegação por Abas -->
       <nav class="flex flex-wrap justify-center gap-2">
         <button onclick="setTab('mapa')" id="btn-mapa" class="tab-btn px-4 py-2 rounded-full font-bold text-sm transition shadow-sm bg-white text-emerald-700">
-          🗺️ Mapa Real do Brasil
+          🗺️ Mapa das Regiões
         </button>
         <button onclick="setTab('poderes')" id="btn-poderes" class="tab-btn px-4 py-2 rounded-full font-bold text-sm transition bg-emerald-700/50 hover:bg-emerald-700 text-white">
           ⚡ Os 3 Poderes
@@ -96,20 +94,20 @@
   <main class="max-w-6xl mx-auto w-full flex-grow p-4 md:p-6">
 
     <!-- ============================================== -->
-    <!-- ABA 1: MAPA GEOGRÁFICO REAL DO BRASIL -->
+    <!-- ABA 1: MAPA COLORIDO POR REGIÕES -->
     <!-- ============================================== -->
     <section id="section-mapa" class="space-y-6">
       
       <div class="text-center max-w-2xl mx-auto">
-        <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Geografia Real</span>
-        <h2 class="text-2xl md:text-3xl font-bold text-emerald-900 mt-2">Explora o Território Brasileiro!</h2>
-        <p class="text-slate-600 text-sm mt-1">Clica nos círculos de cada estado ou usa os filtros de regiões para descobrir quem administra cada pedaço do Brasil.</p>
+        <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Geografia Interativa</span>
+        <h2 class="text-2xl md:text-3xl font-bold text-emerald-900 mt-2">Os Estados e as 5 Regiões do Brasil</h2>
+        <p class="text-slate-600 text-sm mt-1">Cada região tem a sua cor! Clica em qualquer estado no mapa para ver quem governa e como tudo funciona.</p>
       </div>
 
-      <!-- Filtros de Regiões -->
+      <!-- Filtros Rápidos de Regiões -->
       <div class="flex flex-wrap items-center justify-center gap-2">
-        <span class="text-xs font-bold text-slate-500 mr-1">Regiões:</span>
-        <button onclick="filterRegion('TODAS')" class="text-xs font-bold px-3.5 py-1.5 rounded-full bg-slate-800 text-white shadow-sm hover:scale-105 transition">Todos</button>
+        <span class="text-xs font-bold text-slate-500 mr-1">Filtrar por Região:</span>
+        <button onclick="filterRegion('TODAS')" class="text-xs font-bold px-3.5 py-1.5 rounded-full bg-slate-800 text-white shadow-sm hover:scale-105 transition">Todas as Regiões</button>
         <button onclick="filterRegion('Norte')" class="text-xs font-bold px-3.5 py-1.5 rounded-full bg-emerald-500 text-white shadow-sm hover:scale-105 transition">Norte 🌳</button>
         <button onclick="filterRegion('Nordeste')" class="text-xs font-bold px-3.5 py-1.5 rounded-full bg-amber-500 text-white shadow-sm hover:scale-105 transition">Nordeste ☀️</button>
         <button onclick="filterRegion('Centro-Oeste')" class="text-xs font-bold px-3.5 py-1.5 rounded-full bg-sky-500 text-white shadow-sm hover:scale-105 transition">Centro-Oeste 🏛️</button>
@@ -119,22 +117,21 @@
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        <!-- Mapa Real Leaflet -->
+        <!-- Mapa Leaflet com os Estados Coloridos -->
         <div class="lg:col-span-7 bg-white rounded-3xl p-3 shadow-md border-2 border-emerald-100 flex flex-col items-center">
           <div id="map" class="shadow-inner"></div>
           
-          <!-- Legenda de Cores -->
+          <!-- Legenda de Cores das Regiões -->
           <div class="mt-3 flex flex-wrap justify-center gap-3 text-[11px] font-bold text-slate-600">
-            <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Norte</div>
-            <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-amber-500"></span> Nordeste</div>
-            <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-sky-500"></span> Centro-Oeste</div>
-            <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-orange-500"></span> Sudeste</div>
-            <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-violet-500"></span> Sul</div>
-            <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-rose-600"></span> DF (Brasília)</div>
+            <div class="flex items-center gap-1"><span class="w-3.5 h-3.5 rounded-full bg-emerald-500"></span> Norte (7 estados)</div>
+            <div class="flex items-center gap-1"><span class="w-3.5 h-3.5 rounded-full bg-amber-500"></span> Nordeste (9 estados)</div>
+            <div class="flex items-center gap-1"><span class="w-3.5 h-3.5 rounded-full bg-sky-500"></span> Centro-Oeste (3 estados + DF)</div>
+            <div class="flex items-center gap-1"><span class="w-3.5 h-3.5 rounded-full bg-orange-500"></span> Sudeste (4 estados)</div>
+            <div class="flex items-center gap-1"><span class="w-3.5 h-3.5 rounded-full bg-violet-500"></span> Sul (3 estados)</div>
           </div>
         </div>
 
-        <!-- Painel Lateral de Informações -->
+        <!-- Painel Lateral: Detalhes do Estado Selecionado -->
         <div class="lg:col-span-5 space-y-4">
           <div id="state-card" class="bg-white rounded-3xl p-6 shadow-md border-l-8 border-sky-500 transition-all">
             <div class="flex items-center justify-between mb-2">
@@ -151,21 +148,21 @@
             </div>
 
             <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500">
-              💡 <i>Podes dar zoom (+ / -) e arrastar o mapa para ver todos os estados!</i>
+              💡 <i>Dica: Clica em qualquer estado colorido no mapa para descobrir sua capital e seus governantes!</i>
             </div>
           </div>
 
-          <!-- Cards dos 3 Níveis -->
+          <!-- Resumo dos 3 Níveis -->
           <div class="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-3xl p-5 shadow-md">
             <h4 class="font-bold text-sm flex items-center gap-2">
               <span>🎯</span> Os 3 Níveis de Governo:
             </h4>
             <div class="mt-3 space-y-2 text-xs text-emerald-50">
               <div class="bg-white/10 p-2.5 rounded-xl">
-                <b>1. Governo Federal (País Todo):</b> Presidente e Congresso Nacional em Brasília.
+                <b>1. Governo Federal (País):</b> Presidente e Congresso Nacional em Brasília.
               </div>
               <div class="bg-white/10 p-2.5 rounded-xl">
-                <b>2. Governo Estadual (Região):</b> Governador e Deputados Estaduais.
+                <b>2. Governo Estadual (Estado):</b> Governador e Deputados Estaduais.
               </div>
               <div class="bg-white/10 p-2.5 rounded-xl">
                 <b>3. Governo Municipal (Cidade):</b> Prefeito e Vereadores.
@@ -184,7 +181,7 @@
       <div class="text-center max-w-2xl mx-auto">
         <span class="bg-teal-100 text-teal-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Equilíbrio da Democracia</span>
         <h2 class="text-2xl md:text-3xl font-bold text-teal-900 mt-2">O Trio de Superpoderes</h2>
-        <p class="text-slate-600 text-sm mt-1">Ninguém governa sozinho! Cada poder tem uma missão para garantir que tudo seja justo.</p>
+        <p class="text-slate-600 text-sm mt-1">Ninguém governa sozinho! Cada poder tem uma missão essencial para garantir justiça e bem-estar.</p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -299,37 +296,45 @@
     <p>💡 Feito com carinho para ensinar Geografia e Cidadania para crianças do Brasil.</p>
   </footer>
 
-  <!-- Lógica JavaScript com Leaflet e Mapa Real -->
+  <!-- Lógica JavaScript com Polígonos Reais Coloridos por Região -->
   <script>
-    // 1. Dados dos 26 Estados + DF com Coordenadas Geográficas Reais
+    // 1. Dados e Cores por Região
+    const regionColors = {
+      "Norte": "#10b981",        // Verde Esmeralda
+      "Nordeste": "#f59e0b",     // Âmbar / Dourado
+      "Centro-Oeste": "#0ea5e9", // Azul Celeste
+      "Sudeste": "#f97316",      // Laranja
+      "Sul": "#8b5cf6"           // Roxo / Violeta
+    };
+
     const statesData = {
-      "AC": { name: "Acre", capital: "Rio Branco", region: "Norte", lat: -9.0238, lng: -70.8120, color: "#10b981" },
-      "AL": { name: "Alagoas", capital: "Maceió", region: "Nordeste", lat: -9.5713, lng: -36.7820, color: "#f59e0b" },
-      "AP": { name: "Amapá", capital: "Macapá", region: "Norte", lat: 1.4140, lng: -51.7730, color: "#10b981" },
-      "AM": { name: "Amazonas", capital: "Manaus", region: "Norte", lat: -3.4168, lng: -65.8561, color: "#10b981" },
-      "BA": { name: "Bahia", capital: "Salvador", region: "Nordeste", lat: -12.9714, lng: -41.5454, color: "#f59e0b" },
-      "CE": { name: "Ceará", capital: "Fortaleza", region: "Nordeste", lat: -5.4984, lng: -39.3206, color: "#f59e0b" },
-      "DF": { name: "Distrito Federal", capital: "Brasília (Capital Nacional)", region: "Centro-Oeste", lat: -15.7975, lng: -47.8919, color: "#e11d48" },
-      "ES": { name: "Espírito Santo", capital: "Vitória", region: "Sudeste", lat: -19.1834, lng: -40.3089, color: "#f97316" },
-      "GO": { name: "Goiás", capital: "Goiânia", region: "Centro-Oeste", lat: -15.8270, lng: -49.8362, color: "#0ea5e9" },
-      "MA": { name: "Maranhão", capital: "São Luís", region: "Nordeste", lat: -4.9609, lng: -45.2744, color: "#f59e0b" },
-      "MT": { name: "Mato Grosso", capital: "Cuiabá", region: "Centro-Oeste", lat: -12.6819, lng: -56.9211, color: "#0ea5e9" },
-      "MS": { name: "Mato Grosso do Sul", capital: "Campo Grande", region: "Centro-Oeste", lat: -20.7722, lng: -54.7852, color: "#0ea5e9" },
-      "MG": { name: "Minas Gerais", capital: "Belo Horizonte", region: "Sudeste", lat: -18.5122, lng: -44.5550, color: "#f97316" },
-      "PA": { name: "Pará", capital: "Belém", region: "Norte", lat: -3.7932, lng: -52.4820, color: "#10b981" },
-      "PB": { name: "Paraíba", capital: "João Pessoa", region: "Nordeste", lat: -7.2399, lng: -36.7820, color: "#f59e0b" },
-      "PR": { name: "Paraná", capital: "Curitiba", region: "Sul", lat: -24.89, lng: -51.55, color: "#8b5cf6" },
-      "PE": { name: "Pernambuco", capital: "Recife", region: "Nordeste", lat: -8.8137, lng: -36.9541, color: "#f59e0b" },
-      "PI": { name: "Piauí", capital: "Teresina", region: "Nordeste", lat: -7.7183, lng: -42.7289, color: "#f59e0b" },
-      "RJ": { name: "Rio de Janeiro", capital: "Rio de Janeiro", region: "Sudeste", lat: -22.9068, lng: -43.1729, color: "#f97316" },
-      "RN": { name: "Rio Grande do Norte", capital: "Natal", region: "Nordeste", lat: -5.7945, lng: -36.5616, color: "#f59e0b" },
-      "RS": { name: "Rio Grande do Sul", capital: "Porto Alegre", region: "Sul", lat: -30.0346, lng: -51.2177, color: "#8b5cf6" },
-      "RO": { name: "Rondônia", capital: "Porto Velho", region: "Norte", lat: -11.5057, lng: -63.5806, color: "#10b981" },
-      "RR": { name: "Roraima", capital: "Boa Vista", region: "Norte", lat: 2.7376, lng: -62.0751, color: "#10b981" },
-      "SC": { name: "Santa Catarina", capital: "Florianópolis", region: "Sul", lat: -27.2423, lng: -50.2189, color: "#8b5cf6" },
-      "SP": { name: "São Paulo", capital: "São Paulo", region: "Sudeste", lat: -23.5505, lng: -46.6333, color: "#f97316" },
-      "SE": { name: "Sergipe", capital: "Aracaju", region: "Nordeste", lat: -10.5741, lng: -37.3857, color: "#f59e0b" },
-      "TO": { name: "Tocantins", capital: "Palmas", region: "Norte", lat: -10.1753, lng: -48.2982, color: "#10b981" }
+      "AC": { name: "Acre", capital: "Rio Branco", region: "Norte" },
+      "AL": { name: "Alagoas", capital: "Maceió", region: "Nordeste" },
+      "AP": { name: "Amapá", capital: "Macapá", region: "Norte" },
+      "AM": { name: "Amazonas", capital: "Manaus", region: "Norte" },
+      "BA": { name: "Bahia", capital: "Salvador", region: "Nordeste" },
+      "CE": { name: "Ceará", capital: "Fortaleza", region: "Nordeste" },
+      "DF": { name: "Distrito Federal", capital: "Brasília (Capital Nacional)", region: "Centro-Oeste" },
+      "ES": { name: "Espírito Santo", capital: "Vitória", region: "Sudeste" },
+      "GO": { name: "Goiás", capital: "Goiânia", region: "Centro-Oeste" },
+      "MA": { name: "Maranhão", capital: "São Luís", region: "Nordeste" },
+      "MT": { name: "Mato Grosso", capital: "Cuiabá", region: "Centro-Oeste" },
+      "MS": { name: "Mato Grosso do Sul", capital: "Campo Grande", region: "Centro-Oeste" },
+      "MG": { name: "Minas Gerais", capital: "Belo Horizonte", region: "Sudeste" },
+      "PA": { name: "Pará", capital: "Belém", region: "Norte" },
+      "PB": { name: "Paraíba", capital: "João Pessoa", region: "Nordeste" },
+      "PR": { name: "Paraná", capital: "Curitiba", region: "Sul" },
+      "PE": { name: "Pernambuco", capital: "Recife", region: "Nordeste" },
+      "PI": { name: "Piauí", capital: "Teresina", region: "Nordeste" },
+      "RJ": { name: "Rio de Janeiro", capital: "Rio de Janeiro", region: "Sudeste" },
+      "RN": { name: "Rio Grande do Norte", capital: "Natal", region: "Nordeste" },
+      "RS": { name: "Rio Grande do Sul", capital: "Porto Alegre", region: "Sul" },
+      "RO": { name: "Rondônia", capital: "Porto Velho", region: "Norte" },
+      "RR": { name: "Roraima", capital: "Boa Vista", region: "Norte" },
+      "SC": { name: "Santa Catarina", capital: "Florianópolis", region: "Sul" },
+      "SP": { name: "São Paulo", capital: "São Paulo", region: "Sudeste" },
+      "SE": { name: "Sergipe", capital: "Aracaju", region: "Nordeste" },
+      "TO": { name: "Tocantins", capital: "Palmas", region: "Norte" }
     };
 
     const regionBorderColors = {
@@ -349,11 +354,12 @@
     };
 
     let leafletMap;
-    let mapMarkers = {};
+    let geojsonLayer;
+    let currentFilter = "TODAS";
 
-    // 2. Inicialização do Mapa Geográfico Real
-    function initRealMap() {
-      // Centralizado geograficamente no Brasil
+    // 2. Inicializar o Mapa com os Estados Coloridos por Região
+    async function initColorMap() {
+      // Criação do Mapa com visão centralizada no Brasil
       leafletMap = L.map('map', {
         center: [-14.2350, -51.9253],
         zoom: 4,
@@ -361,36 +367,79 @@
         maxZoom: 7
       });
 
-      // Camada base bonita do OpenStreetMap
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap'
+      // Camada de fundo suave (CartoDB Positron)
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap, © CartoDB'
       }).addTo(leafletMap);
 
-      // Criar marcadores circulares interativos para cada estado
-      Object.keys(statesData).forEach(uf => {
-        const state = statesData[uf];
-        const isDF = (uf === 'DF');
-        const size = isDF ? 34 : 28;
-        
-        const customIcon = L.divIcon({
-          className: 'custom-div-icon',
-          html: `<div class="state-marker ${isDF ? 'marker-df' : ''}" style="width: ${size}px; height: ${size}px; background-color: ${state.color};">${uf}</div>`,
-          iconSize: [size, size],
-          iconAnchor: [size / 2, size / 2]
-        });
-
-        const marker = L.marker([state.lat, state.lng], { icon: customIcon }).addTo(leafletMap);
-        
-        marker.on('click', () => {
-          selectState(uf);
-          leafletMap.flyTo([state.lat, state.lng], 5, { duration: 0.8 });
-        });
-
-        mapMarkers[uf] = marker;
+      // Pin animado de Brasília no centro
+      const dfIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div class="df-marker" title="Brasília - Capital do Brasil">DF</div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
       });
+      L.marker([-15.7975, -47.8919], { icon: dfIcon }).addTo(leafletMap)
+        .on('click', () => selectState('DF'));
+
+      // Carregar os polígonos reais dos 26 estados + DF
+      try {
+        const res = await fetch("https://raw.githubusercontent.com/codeforamerica/click_test/master/maps/geojson/brazil-states.geojson");
+        const geoData = await res.json();
+
+        geojsonLayer = L.geoJSON(geoData, {
+          style: function(feature) {
+            const uf = feature.properties.sigla || feature.id;
+            const state = statesData[uf];
+            const color = state ? regionColors[state.region] : "#94a3b8";
+            
+            return {
+              fillColor: color,
+              weight: 1.5,
+              opacity: 1,
+              color: '#ffffff',
+              fillOpacity: 0.8
+            };
+          },
+          onEachFeature: function(feature, layer) {
+            const uf = feature.properties.sigla || feature.id;
+            const state = statesData[uf];
+
+            if (state) {
+              layer.bindTooltip(`<b>${state.name} (${uf})</b><br>Região ${state.region}`, {
+                sticky: true,
+                className: 'font-bold text-xs rounded-xl shadow-md'
+              });
+            }
+
+            layer.on({
+              mouseover: function(e) {
+                const l = e.target;
+                l.setStyle({
+                  weight: 3,
+                  color: '#0f172a',
+                  fillOpacity: 0.95
+                });
+                l.bringToFront();
+              },
+              mouseout: function(e) {
+                geojsonLayer.resetStyle(e.target);
+                applyFilterStyles();
+              },
+              click: function(e) {
+                selectState(uf);
+                leafletMap.fitBounds(e.target.getBounds(), { maxZoom: 6 });
+              }
+            });
+          }
+        }).addTo(leafletMap);
+
+      } catch (e) {
+        console.error("Erro ao carregar GeoJSON dos estados:", e);
+      }
     }
 
-    // 3. Atualizar Painel de Informações
+    // 3. Atualizar Painel de Informações do Estado
     function selectState(uf) {
       const state = statesData[uf];
       if (!state) return;
@@ -420,23 +469,38 @@
       }
     }
 
-    // 4. Filtrar por Região
+    // 4. Filtrar Cores por Região
     function filterRegion(reg) {
-      Object.keys(statesData).forEach(uf => {
-        const state = statesData[uf];
-        const marker = mapMarkers[uf];
-        if (!marker) return;
-
-        if (reg === "TODAS" || state.region === reg) {
-          marker.setOpacity(1);
-        } else {
-          marker.setOpacity(0.15);
-        }
-      });
+      currentFilter = reg;
+      applyFilterStyles();
 
       if (reg === "TODAS") {
         leafletMap.flyTo([-14.2350, -51.9253], 4);
       }
+    }
+
+    function applyFilterStyles() {
+      if (!geojsonLayer) return;
+      
+      geojsonLayer.eachLayer(layer => {
+        const uf = layer.feature.properties.sigla || layer.feature.id;
+        const state = statesData[uf];
+        if (!state) return;
+
+        if (currentFilter === "TODAS" || state.region === currentFilter) {
+          layer.setStyle({
+            fillColor: regionColors[state.region],
+            fillOpacity: 0.85,
+            opacity: 1
+          });
+        } else {
+          layer.setStyle({
+            fillColor: "#cbd5e1",
+            fillOpacity: 0.2,
+            opacity: 0.3
+          });
+        }
+      });
     }
 
     // 5. Navegação das Abas
@@ -551,8 +615,9 @@
       renderQuestion();
     }
 
+    // Inicialização ao carregar a página
     window.addEventListener('DOMContentLoaded', () => {
-      initRealMap();
+      initColorMap();
       selectState('DF');
       renderQuestion();
     });

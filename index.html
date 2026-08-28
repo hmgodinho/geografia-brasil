@@ -9,6 +9,9 @@
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" />
 
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
@@ -21,70 +24,55 @@
     h1, h2, h3, .brand-font {
       font-family: 'Fredoka', cursive;
     }
-    
-    /* Estilos dos Estados Vetoriais */
-    .state-path {
-      cursor: pointer;
-      stroke: #ffffff;
-      stroke-width: 1.5px;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      vector-effect: non-scaling-stroke;
+    #map {
+      height: 480px;
+      width: 100%;
+      border-radius: 1.5rem;
+      z-index: 10;
+      background-color: #e2e8f0;
     }
-    .state-path:hover {
-      filter: brightness(1.18);
-      stroke: #0f172a;
-      stroke-width: 2.5px;
-      paint-order: stroke fill;
+    .custom-div-icon {
+      background: transparent;
+      border: none;
     }
-    .state-selected {
-      stroke: #0f172a !important;
-      stroke-width: 3px !important;
-      filter: drop-shadow(0px 4px 10px rgba(0, 0, 0, 0.35)) brightness(1.1) !important;
-    }
-    .state-label {
+    .state-paint-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
       font-family: 'Fredoka', cursive;
-      font-size: 11px;
       font-weight: 700;
-      fill: #ffffff;
-      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8), -1px -1px 2px rgba(0, 0, 0, 0.8);
-      pointer-events: none;
-      text-anchor: middle;
-      dominant-baseline: central;
+      font-size: 11px;
+      border-radius: 9999px;
+      border: 2px solid #ffffff;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.35);
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
       user-select: none;
     }
-    .df-pin {
-      cursor: pointer;
-      fill: #e11d48;
-      stroke: #ffffff;
-      stroke-width: 2px;
+    .state-paint-btn:hover {
+      transform: scale(1.3);
+      border-color: #0f172a;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+      z-index: 999 !important;
+    }
+    .df-paint-btn {
+      border-color: #ffffff !important;
+      box-shadow: 0 0 15px rgba(225, 29, 72, 0.9) !important;
       animation: pulse-df 1.5s infinite;
     }
     @keyframes pulse-df {
-      0%, 100% { transform: scale(1); transform-origin: 326px 308px; }
-      50% { transform: scale(1.3); transform-origin: 326px 308px; }
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
     }
     .color-btn-active {
       outline: 4px solid #0f172a;
       transform: scale(1.18);
     }
-    
-    /* Balão de Dica (Tooltip) */
-    #custom-tooltip {
-      position: absolute;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.15s ease;
-      z-index: 50;
-      transform: translate(-50%, -120%);
-    }
   </style>
 </head>
 <body class="text-slate-800 min-h-screen flex flex-col antialiased selection:bg-emerald-200">
 
-  <!-- Balão de Dica Flutuante -->
-  <div id="custom-tooltip" class="bg-slate-900 text-white text-xs font-bold py-1.5 px-3 rounded-xl shadow-xl border border-slate-700 whitespace-nowrap"></div>
-
-  <!-- Cabeçalho Principal -->
   <header class="bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white shadow-lg py-5 px-4 sticky top-0 z-40">
     <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
       <div class="flex items-center gap-3">
@@ -95,10 +83,9 @@
         </div>
       </div>
       
-      <!-- Navegação por Abas -->
       <nav class="flex flex-wrap justify-center gap-2">
         <button onclick="setTab('mapa')" id="btn-mapa" class="tab-btn px-4 py-2 rounded-full font-bold text-sm transition shadow-sm bg-white text-emerald-700">
-          🗺️ Pinte o Brasil
+          🗺️ Pinte o Brasil Real
         </button>
         <button onclick="setTab('poderes')" id="btn-poderes" class="tab-btn px-4 py-2 rounded-full font-bold text-sm transition bg-emerald-700 bg-opacity-50 hover:bg-opacity-100 text-white">
           ⚡ Os 3 Poderes
@@ -110,24 +97,18 @@
     </div>
   </header>
 
-  <!-- Conteúdo Principal -->
   <main class="max-w-6xl mx-auto w-full flex-grow p-4 md:p-6">
 
-    <!-- ============================================== -->
-    <!-- ABA 1: MAPA VETORIAL REAL DE PINTURA -->
-    <!-- ============================================== -->
     <section id="section-mapa" class="space-y-6">
       
       <div class="text-center max-w-2xl mx-auto">
-        <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Ateliê Geográfico</span>
-        <h2 class="text-2xl md:text-3xl font-bold text-emerald-900 mt-2">Escolha uma Cor e Pinte o Mapa!</h2>
-        <p class="text-slate-600 text-sm mt-1">Clica numa tinta abaixo e depois clica em qualquer estado para colori-lo!</p>
+        <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Geografia Real & Pintura</span>
+        <h2 class="text-2xl md:text-3xl font-bold text-emerald-900 mt-2">Escolha uma Cor e Pinte o Mapa Real!</h2>
+        <p class="text-slate-600 text-sm mt-1">Clica numa tinta da paleta e depois clica em qualquer estado para colori-lo diretamente no mapa do Brasil.</p>
       </div>
 
-      <!-- Barra da Paleta de Cores e Ações -->
       <div class="bg-white p-4 rounded-3xl shadow-sm border border-emerald-100 max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-4">
         
-        <!-- Tintas da Paleta -->
         <div class="flex items-center gap-2.5 flex-wrap">
           <span class="text-xs font-bold text-slate-500 mr-1">🎨 Tintas:</span>
           
@@ -140,7 +121,6 @@
           <button onclick="setCurrentColor('#ef4444', this)" class="color-btn w-8 h-8 rounded-full bg-red-500 shadow transition transform hover:scale-110" title="Vermelho"></button>
         </div>
 
-        <!-- Botões de Ação -->
         <div class="flex items-center gap-2">
           <button onclick="colorAllByRegion()" class="text-xs font-bold px-3.5 py-2 rounded-full bg-teal-600 hover:bg-teal-700 text-white shadow transition">
             ✨ Cores Oficiais
@@ -154,133 +134,19 @@
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        <!-- Contêiner do Mapa Vetorial Realista -->
-        <div class="lg:col-span-7 bg-white rounded-3xl p-4 md:p-6 shadow-md border-2 border-emerald-100 flex flex-col items-center relative">
+        <div class="lg:col-span-7 bg-white rounded-3xl p-3 shadow-md border-2 border-emerald-100 flex flex-col items-center">
+          <div id="map" class="shadow-inner"></div>
           
-          <div class="w-full flex justify-center overflow-visible">
-            <!-- SVG Cartográfico Geométrico de Alta Precisão (Sem dependências externas) -->
-            <svg id="brazil-svg" viewBox="0 0 540 540" class="w-full max-w-[490px] h-auto drop-shadow-sm select-none">
-              
-              <!-- REGIÃO NORTE -->
-              <!-- RR -->
-              <path id="uf-RR" class="state-path" fill="#10b981" onclick="handleStateClick('RR', this)" onmousemove="showTooltip(event, 'Roraima (RR)')" onmouseout="hideTooltip()" d="M 185,35 L 215,28 L 225,65 L 205,100 L 175,95 L 165,65 Z"/>
-              <text x="195" y="65" class="state-label text-[10px]">RR</text>
-
-              <!-- AP -->
-              <path id="uf-AP" class="state-path" fill="#10b981" onclick="handleStateClick('AP', this)" onmousemove="showTooltip(event, 'Amapá (AP)')" onmouseout="hideTooltip()" d="M 310,55 L 340,50 L 335,95 L 305,90 Z"/>
-              <text x="322" y="72" class="state-label text-[10px]">AP</text>
-
-              <!-- AM -->
-              <path id="uf-AM" class="state-path" fill="#10b981" onclick="handleStateClick('AM', this)" onmousemove="showTooltip(event, 'Amazonas (AM)')" onmouseout="hideTooltip()" d="M 65,100 L 165,65 L 175,95 L 205,100 L 210,135 L 190,175 L 120,185 L 75,155 Z"/>
-              <text x="135" y="130" class="state-label text-sm">AM</text>
-
-              <!-- PA -->
-              <path id="uf-PA" class="state-path" fill="#10b981" onclick="handleStateClick('PA', this)" onmousemove="showTooltip(event, 'Pará (PA)')" onmouseout="hideTooltip()" d="M 215,70 L 310,55 L 305,90 L 345,110 L 335,165 L 295,190 L 245,190 L 210,135 Z"/>
-              <text x="275" y="130" class="state-label text-sm">PA</text>
-
-              <!-- AC -->
-              <path id="uf-AC" class="state-path" fill="#10b981" onclick="handleStateClick('AC', this)" onmousemove="showTooltip(event, 'Acre (AC)')" onmouseout="hideTooltip()" d="M 30,155 L 75,155 L 90,185 L 45,200 Z"/>
-              <text x="60" y="178" class="state-label text-[10px]">AC</text>
-
-              <!-- RO -->
-              <path id="uf-RO" class="state-path" fill="#10b981" onclick="handleStateClick('RO', this)" onmousemove="showTooltip(event, 'Rondônia (RO)')" onmouseout="hideTooltip()" d="M 120,185 L 160,180 L 165,225 L 125,230 Z"/>
-              <text x="142" y="206" class="state-label text-[10px]">RO</text>
-
-              <!-- TO -->
-              <path id="uf-TO" class="state-path" fill="#10b981" onclick="handleStateClick('TO', this)" onmousemove="showTooltip(event, 'Tocantins (TO)')" onmouseout="hideTooltip()" d="M 295,170 L 325,165 L 325,245 L 290,250 L 290,190 Z"/>
-              <text x="307" y="210" class="state-label text-[10px]">TO</text>
-
-              <!-- REGIÃO NORDESTE -->
-              <!-- MA -->
-              <path id="uf-MA" class="state-path" fill="#f59e0b" onclick="handleStateClick('MA', this)" onmousemove="showTooltip(event, 'Maranhão (MA)')" onmouseout="hideTooltip()" d="M 335,115 L 380,125 L 370,185 L 325,170 Z"/>
-              <text x="352" y="150" class="state-label text-[10px]">MA</text>
-
-              <!-- PI -->
-              <path id="uf-PI" class="state-path" fill="#f59e0b" onclick="handleStateClick('PI', this)" onmousemove="showTooltip(event, 'Piauí (PI)')" onmouseout="hideTooltip()" d="M 380,125 L 405,140 L 390,210 L 365,205 L 370,185 Z"/>
-              <text x="385" y="170" class="state-label text-[10px]">PI</text>
-
-              <!-- CE -->
-              <path id="uf-CE" class="state-path" fill="#f59e0b" onclick="handleStateClick('CE', this)" onmousemove="showTooltip(event, 'Ceará (CE)')" onmouseout="hideTooltip()" d="M 405,130 L 440,135 L 435,170 L 405,155 Z"/>
-              <text x="422" y="148" class="state-label text-[10px]">CE</text>
-
-              <!-- RN -->
-              <path id="uf-RN" class="state-path" fill="#f59e0b" onclick="handleStateClick('RN', this)" onmousemove="showTooltip(event, 'Rio Grande do Norte (RN)')" onmouseout="hideTooltip()" d="M 440,135 L 475,145 L 460,160 L 435,160 Z"/>
-              <text x="454" y="148" class="state-label text-[8px]">RN</text>
-
-              <!-- PB -->
-              <path id="uf-PB" class="state-path" fill="#f59e0b" onclick="handleStateClick('PB', this)" onmousemove="showTooltip(event, 'Paraíba (PB)')" onmouseout="hideTooltip()" d="M 435,160 L 475,160 L 470,178 L 430,175 Z"/>
-              <text x="453" y="169" class="state-label text-[8px]">PB</text>
-
-              <!-- PE -->
-              <path id="uf-PE" class="state-path" fill="#f59e0b" onclick="handleStateClick('PE', this)" onmousemove="showTooltip(event, 'Pernambuco (PE)')" onmouseout="hideTooltip()" d="M 395,178 L 470,178 L 465,195 L 390,195 Z"/>
-              <text x="430" y="186" class="state-label text-[9px]">PE</text>
-
-              <!-- AL -->
-              <path id="uf-AL" class="state-path" fill="#f59e0b" onclick="handleStateClick('AL', this)" onmousemove="showTooltip(event, 'Alagoas (AL)')" onmouseout="hideTooltip()" d="M 440,195 L 468,195 L 460,212 L 438,208 Z"/>
-              <text x="452" y="204" class="state-label text-[8px]">AL</text>
-
-              <!-- SE -->
-              <path id="uf-SE" class="state-path" fill="#f59e0b" onclick="handleStateClick('SE', this)" onmousemove="showTooltip(event, 'Sergipe (SE)')" onmouseout="hideTooltip()" d="M 430,208 L 455,212 L 445,225 L 425,220 Z"/>
-              <text x="438" y="217" class="state-label text-[8px]">SE</text>
-
-              <!-- BA -->
-              <path id="uf-BA" class="state-path" fill="#f59e0b" onclick="handleStateClick('BA', this)" onmousemove="showTooltip(event, 'Bahia (BA)')" onmouseout="hideTooltip()" d="M 345,200 L 395,195 L 440,212 L 430,285 L 370,295 L 340,250 Z"/>
-              <text x="390" y="245" class="state-label text-sm">BA</text>
-
-              <!-- REGIÃO CENTRO-OESTE -->
-              <!-- MT -->
-              <path id="uf-MT" class="state-path" fill="#0ea5e9" onclick="handleStateClick('MT', this)" onmousemove="showTooltip(event, 'Mato Grosso (MT)')" onmouseout="hideTooltip()" d="M 165,185 L 245,190 L 280,240 L 240,295 L 185,290 L 160,225 Z"/>
-              <text x="218" y="245" class="state-label text-sm">MT</text>
-
-              <!-- GO -->
-              <path id="uf-GO" class="state-path" fill="#0ea5e9" onclick="handleStateClick('GO', this)" onmousemove="showTooltip(event, 'Goiás (GO)')" onmouseout="hideTooltip()" d="M 280,240 L 325,245 L 330,305 L 280,315 L 245,295 Z"/>
-              <text x="290" y="280" class="state-label text-[10px]">GO</text>
-
-              <!-- DF (Distrito Federal Destacado) -->
-              <circle id="uf-DF" cx="308" cy="275" r="7.5" class="df-pin" onclick="handleStateClick('DF', this)" onmousemove="showTooltip(event, 'Distrito Federal (Brasília)')" onmouseout="hideTooltip()"/>
-              <text x="308" y="275" class="state-label text-[7px]">DF</text>
-
-              <!-- MS -->
-              <path id="uf-MS" class="state-path" fill="#0ea5e9" onclick="handleStateClick('MS', this)" onmousemove="showTooltip(event, 'Mato Grosso do Sul (MS)')" onmouseout="hideTooltip()" d="M 195,295 L 255,295 L 260,365 L 210,360 Z"/>
-              <text x="230" y="330" class="state-label text-[10px]">MS</text>
-
-              <!-- REGIÃO SUDESTE -->
-              <!-- MG -->
-              <path id="uf-MG" class="state-path" fill="#f97316" onclick="handleStateClick('MG', this)" onmousemove="showTooltip(event, 'Minas Gerais (MG)')" onmouseout="hideTooltip()" d="M 330,270 L 395,285 L 385,348 L 325,358 L 305,315 Z"/>
-              <text x="350" y="318" class="state-label text-sm">MG</text>
-
-              <!-- ES -->
-              <path id="uf-ES" class="state-path" fill="#f97316" onclick="handleStateClick('ES', this)" onmousemove="showTooltip(event, 'Espírito Santo (ES)')" onmouseout="hideTooltip()" d="M 395,295 L 418,305 L 405,340 L 388,335 Z"/>
-              <text x="403" y="320" class="state-label text-[8px]">ES</text>
-
-              <!-- RJ -->
-              <path id="uf-RJ" class="state-path" fill="#f97316" onclick="handleStateClick('RJ', this)" onmousemove="showTooltip(event, 'Rio de Janeiro (RJ)')" onmouseout="hideTooltip()" d="M 360,350 L 400,345 L 388,368 L 350,362 Z"/>
-              <text x="375" y="358" class="state-label text-[8px]">RJ</text>
-
-              <!-- SP -->
-              <path id="uf-SP" class="state-path" fill="#f97316" onclick="handleStateClick('SP', this)" onmousemove="showTooltip(event, 'São Paulo (SP)')" onmouseout="hideTooltip()" d="M 260,335 L 325,345 L 325,385 L 265,380 Z"/>
-              <text x="295" y="362" class="state-label text-[10px]">SP</text>
-
-              <!-- REGIÃO SUL -->
-              <!-- PR -->
-              <path id="uf-PR" class="state-path" fill="#8b5cf6" onclick="handleStateClick('PR', this)" onmousemove="showTooltip(event, 'Paraná (PR)')" onmouseout="hideTooltip()" d="M 255,380 L 315,385 L 305,420 L 240,410 Z"/>
-              <text x="280" y="400" class="state-label text-[10px]">PR</text>
-
-              <!-- SC -->
-              <path id="uf-SC" class="state-path" fill="#8b5cf6" onclick="handleStateClick('SC', this)" onmousemove="showTooltip(event, 'Santa Catarina (SC)')" onmouseout="hideTooltip()" d="M 250,415 L 310,420 L 300,448 L 245,442 Z"/>
-              <text x="278" y="432" class="state-label text-[9px]">SC</text>
-
-              <!-- RS -->
-              <path id="uf-RS" class="state-path" fill="#8b5cf6" onclick="handleStateClick('RS', this)" onmousemove="showTooltip(event, 'Rio Grande do Sul (RS)')" onmouseout="hideTooltip()" d="M 235,445 L 300,445 L 285,505 L 220,500 Z"/>
-              <text x="260" y="475" class="state-label text-[10px]">RS</text>
-
-            </svg>
+          <div class="mt-3 flex flex-wrap justify-center gap-3 text-[11px] font-bold text-slate-600">
+            <div class="flex items-center gap-1"><span class="w-3.5 h-3.5 rounded-full bg-emerald-500"></span> Norte</div>
+            <div class="flex items-center gap-1"><span class="w-3.5 h-3.5 rounded-full bg-yellow-500"></span> Nordeste</div>
+            <div class="flex items-center gap-1"><span class="w-3.5 h-3.5 rounded-full bg-blue-400"></span> Centro-Oeste</div>
+            <div class="flex items-center gap-1"><span class="w-3.5 h-3.5 rounded-full bg-yellow-600"></span> Sudeste</div>
+            <div class="flex items-center gap-1"><span class="w-3.5 h-3.5 rounded-full bg-purple-500"></span> Sul</div>
+            <div class="flex items-center gap-1"><span class="w-3.5 h-3.5 rounded-full bg-red-500"></span> DF (Brasília)</div>
           </div>
-
-          <p class="text-[11px] text-slate-400 mt-3 font-semibold text-center">💡 Dica: Clica na cor desejada e depois em qualquer estado do mapa para pintar!</p>
         </div>
 
-        <!-- Painel Lateral: Detalhes do Estado Selecionado -->
         <div class="lg:col-span-5 space-y-4">
           <div id="state-card" class="bg-white rounded-3xl p-6 shadow-md border-l-8 border-blue-500 transition-all">
             <div class="flex items-center justify-between mb-2">
@@ -292,12 +158,11 @@
             <p id="state-capital" class="text-xs font-bold text-slate-500 mt-0.5">Capital do Brasil: Brasília 🇧🇷</p>
 
             <div id="state-gov-info" class="mt-4 space-y-3 text-xs leading-relaxed text-slate-700 bg-gray-50 p-4 rounded-2xl border border-gray-100">
-              <p><b>👑 No Nível Federal:</b> Aqui no Distrito Federal trabalham o <b>Presidente da República</b>, os <b>Deputados Federais</b>, <b>Senadores</b> e os <b>Juízes do STF</b>, que cuidam de todo o país.</p>
+              <p><b>👑 No Nível Federal:</b> Aqui em Brasília trabalham o <b>Presidente da República</b>, os <b>Deputados Federais</b>, <b>Senadores</b> e os <b>Juízes do STF</b>, que cuidam de todo o país.</p>
               <p><b>🗺️ No Nível Distrital:</b> O Governador e os Deputados Distritais cuidam das escolas, polícia e hospitais de todo o DF.</p>
             </div>
           </div>
 
-          <!-- Resumo dos 3 Níveis -->
           <div class="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-3xl p-5 shadow-md">
             <h4 class="font-bold text-sm flex items-center gap-2">
               <span>🎯</span> Os 3 Níveis de Governo:
@@ -319,9 +184,6 @@
       </div>
     </section>
 
-    <!-- ============================================== -->
-    <!-- ABA 2: OS 3 PODERES -->
-    <!-- ============================================== -->
     <section id="section-poderes" class="space-y-6 hidden">
       <div class="text-center max-w-2xl mx-auto">
         <span class="bg-teal-100 text-teal-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Equilíbrio da Democracia</span>
@@ -330,7 +192,6 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- Legislativo -->
         <div class="bg-white rounded-3xl p-6 shadow-md border-t-8 border-purple-500 flex flex-col justify-between">
           <div>
             <div class="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center text-3xl mb-4">📜</div>
@@ -348,7 +209,6 @@
           </div>
         </div>
 
-        <!-- Executivo -->
         <div class="bg-white rounded-3xl p-6 shadow-md border-t-8 border-yellow-500 flex flex-col justify-between">
           <div>
             <div class="w-14 h-14 bg-yellow-100 rounded-2xl flex items-center justify-center text-3xl mb-4">⚙️</div>
@@ -366,7 +226,6 @@
           </div>
         </div>
 
-        <!-- Judiciário -->
         <div class="bg-white rounded-3xl p-6 shadow-md border-t-8 border-red-500 flex flex-col justify-between">
           <div>
             <div class="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center text-3xl mb-4">⚖️</div>
@@ -386,9 +245,6 @@
       </div>
     </section>
 
-    <!-- ============================================== -->
-    <!-- ABA 3: SUPER QUIZ INTERATIVO -->
-    <!-- ============================================== -->
     <section id="section-quiz" class="space-y-6 hidden">
       <div class="max-w-2xl mx-auto bg-white rounded-3xl p-6 md:p-8 shadow-lg border-4 border-yellow-300">
         
@@ -403,7 +259,6 @@
           </div>
         </div>
 
-        <!-- Pergunta e Opções -->
         <div id="quiz-container">
           <div class="flex items-center gap-2 mb-3">
             <span id="question-number" class="text-xs font-bold bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full">Pergunta 1 de 5</span>
@@ -412,7 +267,6 @@
 
           <div id="options-container" class="space-y-3"></div>
 
-          <!-- Feedback da Resposta -->
           <div id="feedback-box" class="mt-6 p-4 rounded-2xl hidden">
             <p id="feedback-text" class="text-sm font-semibold"></p>
             <button onclick="nextQuestion()" id="btn-next" class="mt-3 px-5 py-2 bg-slate-800 text-white font-bold text-sm rounded-full shadow hover:bg-slate-700 transition">
@@ -421,7 +275,6 @@
           </div>
         </div>
 
-        <!-- Fim de Jogo -->
         <div id="quiz-end" class="text-center py-8 space-y-4 hidden">
           <div class="text-6xl animate-bounce">🏆</div>
           <h3 class="text-2xl font-bold text-slate-800">Parabéns, Jovem Cidadão!</h3>
@@ -436,50 +289,48 @@
 
   </main>
 
-  <!-- Rodapé -->
   <footer class="bg-slate-800 text-slate-300 py-6 px-4 text-center text-xs mt-auto">
     <p>💡 Feito com carinho para ensinar Geografia e Cidadania para crianças do Brasil.</p>
   </footer>
 
-  <!-- Lógica JavaScript 100% Autônoma e Sem Erros -->
   <script>
-    // 1. Base de Dados dos Estados Brasileiros
+    // 1. Dados e Cores dos 26 Estados + DF com Coordenadas Reais
     const regionColors = {
       "Norte": "#10b981",        // Verde
-      "Nordeste": "#f59e0b",     // Âmbar
+      "Nordeste": "#f59e0b",     // Amarelo / Dourado
       "Centro-Oeste": "#0ea5e9", // Azul
       "Sudeste": "#f97316",      // Laranja
       "Sul": "#8b5cf6"           // Roxo
     };
 
     const statesData = {
-      "AC": { name: "Acre", capital: "Rio Branco", region: "Norte" },
-      "AL": { name: "Alagoas", capital: "Maceió", region: "Nordeste" },
-      "AP": { name: "Amapá", capital: "Macapá", region: "Norte" },
-      "AM": { name: "Amazonas", capital: "Manaus", region: "Norte" },
-      "BA": { name: "Bahia", capital: "Salvador", region: "Nordeste" },
-      "CE": { name: "Ceará", capital: "Fortaleza", region: "Nordeste" },
-      "DF": { name: "Distrito Federal", capital: "Brasília (Capital Nacional)", region: "Centro-Oeste" },
-      "ES": { name: "Espírito Santo", capital: "Vitória", region: "Sudeste" },
-      "GO": { name: "Goiás", capital: "Goiânia", region: "Centro-Oeste" },
-      "MA": { name: "Maranhão", capital: "São Luís", region: "Nordeste" },
-      "MT": { name: "Mato Grosso", capital: "Cuiabá", region: "Centro-Oeste" },
-      "MS": { name: "Mato Grosso do Sul", capital: "Campo Grande", region: "Centro-Oeste" },
-      "MG": { name: "Minas Gerais", capital: "Belo Horizonte", region: "Sudeste" },
-      "PA": { name: "Pará", capital: "Belém", region: "Norte" },
-      "PB": { name: "Paraíba", capital: "João Pessoa", region: "Nordeste" },
-      "PR": { name: "Paraná", capital: "Curitiba", region: "Sul" },
-      "PE": { name: "Pernambuco", capital: "Recife", region: "Nordeste" },
-      "PI": { name: "Piauí", capital: "Teresina", region: "Nordeste" },
-      "RJ": { name: "Rio de Janeiro", capital: "Rio de Janeiro", region: "Sudeste" },
-      "RN": { name: "Rio Grande do Norte", capital: "Natal", region: "Nordeste" },
-      "RS": { name: "Rio Grande do Sul", capital: "Porto Alegre", region: "Sul" },
-      "RO": { name: "Rondônia", capital: "Porto Velho", region: "Norte" },
-      "RR": { name: "Roraima", capital: "Boa Vista", region: "Norte" },
-      "SC": { name: "Santa Catarina", capital: "Florianópolis", region: "Sul" },
-      "SP": { name: "São Paulo", capital: "São Paulo", region: "Sudeste" },
-      "SE": { name: "Sergipe", capital: "Aracaju", region: "Nordeste" },
-      "TO": { name: "Tocantins", capital: "Palmas", region: "Norte" }
+      "AC": { name: "Acre", capital: "Rio Branco", region: "Norte", lat: -9.0238, lng: -70.8120 },
+      "AL": { name: "Alagoas", capital: "Maceió", region: "Nordeste", lat: -9.5713, lng: -36.7820 },
+      "AP": { name: "Amapá", capital: "Macapá", region: "Norte", lat: 1.4140, lng: -51.7730 },
+      "AM": { name: "Amazonas", capital: "Manaus", region: "Norte", lat: -3.4168, lng: -65.8561 },
+      "BA": { name: "Bahia", capital: "Salvador", region: "Nordeste", lat: -12.9714, lng: -41.5454 },
+      "CE": { name: "Ceará", capital: "Fortaleza", region: "Nordeste", lat: -5.4984, lng: -39.3206 },
+      "DF": { name: "Distrito Federal", capital: "Brasília (Capital Nacional)", region: "Centro-Oeste", lat: -15.7975, lng: -47.8919 },
+      "ES": { name: "Espírito Santo", capital: "Vitória", region: "Sudeste", lat: -19.1834, lng: -40.3089 },
+      "GO": { name: "Goiás", capital: "Goiânia", region: "Centro-Oeste", lat: -15.8270, lng: -49.8362 },
+      "MA": { name: "Maranhão", capital: "São Luís", region: "Nordeste", lat: -4.9609, lng: -45.2744 },
+      "MT": { name: "Mato Grosso", capital: "Cuiabá", region: "Centro-Oeste", lat: -12.6819, lng: -56.9211 },
+      "MS": { name: "Mato Grosso do Sul", capital: "Campo Grande", region: "Centro-Oeste", lat: -20.7722, lng: -54.7852 },
+      "MG": { name: "Minas Gerais", capital: "Belo Horizonte", region: "Sudeste", lat: -18.5122, lng: -44.5550 },
+      "PA": { name: "Pará", capital: "Belém", region: "Norte", lat: -3.7932, lng: -52.4820 },
+      "PB": { name: "Paraíba", capital: "João Pessoa", region: "Nordeste", lat: -7.2399, lng: -36.7820 },
+      "PR": { name: "Paraná", capital: "Curitiba", region: "Sul", lat: -24.89, lng: -51.55 },
+      "PE": { name: "Pernambuco", capital: "Recife", region: "Nordeste", lat: -8.8137, lng: -36.9541 },
+      "PI": { name: "Piauí", capital: "Teresina", region: "Nordeste", lat: -7.7183, lng: -42.7289 },
+      "RJ": { name: "Rio de Janeiro", capital: "Rio de Janeiro", region: "Sudeste", lat: -22.9068, lng: -43.1729 },
+      "RN": { name: "Rio Grande do Norte", capital: "Natal", region: "Nordeste", lat: -5.7945, lng: -36.5616 },
+      "RS": { name: "Rio Grande do Sul", capital: "Porto Alegre", region: "Sul", lat: -30.0346, lng: -51.2177 },
+      "RO": { name: "Rondônia", capital: "Porto Velho", region: "Norte", lat: -11.5057, lng: -63.5806 },
+      "RR": { name: "Roraima", capital: "Boa Vista", region: "Norte", lat: 2.7376, lng: -62.0751 },
+      "SC": { name: "Santa Catarina", capital: "Florianópolis", region: "Sul", lat: -27.2423, lng: -50.2189 },
+      "SP": { name: "São Paulo", capital: "São Paulo", region: "Sudeste", lat: -23.5505, lng: -46.6333 },
+      "SE": { name: "Sergipe", capital: "Aracaju", region: "Nordeste", lat: -10.5741, lng: -37.3857 },
+      "TO": { name: "Tocantins", capital: "Palmas", region: "Norte", lat: -10.1753, lng: -48.2982 }
     };
 
     const regionBorderColors = {
@@ -498,9 +349,62 @@
       "Sul": "bg-purple-100 text-purple-800"
     };
 
-    let selectedPaintColor = "#10b981"; // Cor padrão inicial
+    let leafletMap;
+    let mapMarkers = {};
+    let selectedPaintColor = "#10b981";
 
-    // 2. Paleta de Cores e Ações do Mapa
+    // 2. Inicialização do Mapa Geográfico Real (Leaflet)
+    function initLeafletMap() {
+      // Centraliza perfeitamente no Brasil
+      leafletMap = L.map('map', {
+        center: [-14.2350, -51.9253],
+        zoom: 4,
+        minZoom: 3,
+        maxZoom: 7
+      });
+
+      // Camada CartoDB Positron Suave e de Altíssima Disponibilidade
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap, © CartoDB',
+        subdomains: 'abcd',
+        maxZoom: 19
+      }).addTo(leafletMap);
+
+      // Adicionar marcadores interativos e pintáveis para os 26 Estados + DF
+      Object.keys(statesData).forEach(uf => {
+        const state = statesData[uf];
+        const isDF = (uf === 'DF');
+        const size = isDF ? 34 : 28;
+        const initialColor = isDF ? '#ef4444' : regionColors[state.region];
+
+        const customIcon = L.divIcon({
+          className: 'custom-div-icon',
+          html: `<div id="pin-${uf}" class="state-paint-btn ${isDF ? 'df-paint-btn' : ''}" style="width: ${size}px; height: ${size}px; background-color: ${initialColor};">${uf}</div>`,
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2]
+        });
+
+        const marker = L.marker([state.lat, state.lng], { icon: customIcon }).addTo(leafletMap);
+        
+        marker.on('click', () => {
+          // Pinta o estado com a cor selecionada na paleta
+          const pin = document.getElementById(`pin-${uf}`);
+          if (pin) {
+            pin.style.backgroundColor = selectedPaintColor;
+          }
+          selectState(uf);
+        });
+
+        mapMarkers[uf] = marker;
+      });
+
+      // Garante renderização impecável sem fundo cinza
+      setTimeout(() => {
+        leafletMap.invalidateSize();
+      }, 300);
+    }
+
+    // 3. Ferramentas da Paleta de Pintura
     window.setCurrentColor = function(color, btnElement) {
       selectedPaintColor = color;
       document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('color-btn-active'));
@@ -509,48 +413,24 @@
       }
     };
 
-    window.handleStateClick = function(uf, element) {
-      // Pinta o elemento SVG com a cor selecionada
-      element.setAttribute("fill", selectedPaintColor);
-
-      // Destaca o estado selecionado
-      document.querySelectorAll('.state-path, .df-pin').forEach(el => el.classList.remove('state-selected'));
-      element.classList.add('state-selected');
-
-      // Atualiza o painel lateral de informações
-      selectState(uf);
-    };
-
     window.colorAllByRegion = function() {
       Object.keys(statesData).forEach(uf => {
-        const el = document.getElementById(`uf-${uf}`);
-        if (el) {
-          el.setAttribute("fill", regionColors[statesData[uf].region]);
+        const pin = document.getElementById(`pin-${uf}`);
+        if (pin) {
+          pin.style.backgroundColor = (uf === 'DF') ? '#ef4444' : regionColors[statesData[uf].region];
+          pin.style.color = '#ffffff';
         }
       });
     };
 
     window.clearAllColors = function() {
       Object.keys(statesData).forEach(uf => {
-        const el = document.getElementById(`uf-${uf}`);
-        if (el) {
-          el.setAttribute("fill", "#ffffff");
+        const pin = document.getElementById(`pin-${uf}`);
+        if (pin) {
+          pin.style.backgroundColor = '#ffffff';
+          pin.style.color = '#0f172a';
         }
       });
-    };
-
-    // 3. Tooltip do Mapa
-    window.showTooltip = function(event, text) {
-      const tooltip = document.getElementById('custom-tooltip');
-      tooltip.innerText = text;
-      tooltip.style.left = `${event.pageX}px`;
-      tooltip.style.top = `${event.pageY - 10}px`;
-      tooltip.style.opacity = '1';
-    };
-
-    window.hideTooltip = function() {
-      const tooltip = document.getElementById('custom-tooltip');
-      tooltip.style.opacity = '0';
     };
 
     // 4. Detalhes do Estado no Card Lateral
@@ -573,7 +453,7 @@
       if (uf === "DF") {
         govInfo.innerHTML = `
           <p><b>👑 No Nível Federal:</b> Aqui no Distrito Federal trabalham o <b>Presidente da República</b>, os <b>Deputados Federais</b>, <b>Senadores</b> e os <b>Juízes do STF</b>, que cuidam de todo o Brasil.</p>
-          <p><b>🗺️ No Nível Distrital:</b> O Governador e os Deputados Distritais cuidam das escolas, polícia e saúde de todo o DF.</p>
+          <p><b>🗺️ No Nível Distrital:</b> O Governador e os Deputados Distritais cuidam das escolas, polícia e hospitais de todo o DF.</p>
         `;
       } else {
         govInfo.innerHTML = `
@@ -594,6 +474,10 @@
       document.getElementById(`section-${tab}`).classList.remove('hidden');
       const activeBtn = document.getElementById(`btn-${tab}`);
       activeBtn.className = 'tab-btn px-4 py-2 rounded-full font-bold text-sm transition shadow-sm bg-white text-emerald-700';
+
+      if (tab === 'mapa' && leafletMap) {
+        setTimeout(() => leafletMap.invalidateSize(), 200);
+      }
     };
 
     // 6. Super Quiz
@@ -693,6 +577,7 @@
 
     // Inicialização ao carregar a página
     window.addEventListener('DOMContentLoaded', () => {
+      initLeafletMap();
       selectState('DF');
       renderQuestion();
     });

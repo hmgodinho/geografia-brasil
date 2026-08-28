@@ -6,8 +6,6 @@
   <title>Exploradores do Brasil: Como Funciona o Nosso País!</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- D3.js & TopoJSON para renderização cartográfica do Brasil -->
-  <script src="https://d3js.org/d3.v7.min.js"></script>
   <!-- Fontes Google lúdicas -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,23 +20,28 @@
     .state-path {
       cursor: pointer;
       stroke: #ffffff;
-      stroke-width: 1.2px;
+      stroke-width: 1.5px;
       transition: all 0.2s ease-in-out;
     }
     .state-path:hover {
-      filter: brightness(1.25);
+      filter: brightness(1.25) drop-shadow(0px 4px 6px rgba(0,0,0,0.25));
       stroke: #0f172a;
-      stroke-width: 2.2px;
+      stroke-width: 2px;
     }
     .state-active {
       stroke: #0f172a !important;
       stroke-width: 3px !important;
-      filter: brightness(1.2) drop-shadow(0px 4px 10px rgba(0,0,0,0.3));
+      filter: brightness(1.15) drop-shadow(0px 6px 12px rgba(0,0,0,0.3));
     }
-    .tooltip-map {
-      position: absolute;
+    .state-label {
+      font-family: 'Fredoka', cursive;
+      font-size: 11px;
+      font-weight: bold;
+      fill: #ffffff;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
       pointer-events: none;
-      transition: opacity 0.15s ease-in-out;
+      text-anchor: middle;
+      dominant-baseline: central;
     }
   </style>
 </head>
@@ -73,9 +76,7 @@
   <!-- Conteúdo Principal -->
   <main class="max-w-6xl mx-auto w-full flex-grow p-4 md:p-6">
 
-    <!-- ============================================== -->
-    <!-- ABA 1: MAPA CARTOGRÁFICO REAL DO BRASIL -->
-    <!-- ============================================== -->
+    <!-- ABA 1: MAPA CARTOGRÁFICO REAL -->
     <section id="section-mapa" class="space-y-6">
       
       <div class="text-center max-w-2xl mx-auto">
@@ -87,31 +88,138 @@
       <!-- Filtros Rápidos de Regiões -->
       <div class="flex flex-wrap items-center justify-center gap-2">
         <span class="text-xs font-bold text-slate-500 mr-1">Filtrar Região:</span>
-        <button onclick="filterRegion('TODAS')" class="text-xs font-bold px-3 py-1.5 rounded-full bg-slate-800 text-white shadow-sm hover:scale-105 transition">Todos</button>
-        <button onclick="filterRegion('Norte')" class="text-xs font-bold px-3 py-1.5 rounded-full bg-emerald-500 text-white shadow-sm hover:scale-105 transition">Norte 🌳</button>
-        <button onclick="filterRegion('Nordeste')" class="text-xs font-bold px-3 py-1.5 rounded-full bg-amber-500 text-white shadow-sm hover:scale-105 transition">Nordeste ☀️</button>
-        <button onclick="filterRegion('Centro-Oeste')" class="text-xs font-bold px-3 py-1.5 rounded-full bg-sky-500 text-white shadow-sm hover:scale-105 transition">Centro-Oeste 🏛️</button>
-        <button onclick="filterRegion('Sudeste')" class="text-xs font-bold px-3 py-1.5 rounded-full bg-orange-500 text-white shadow-sm hover:scale-105 transition">Sudeste 🏙️</button>
-        <button onclick="filterRegion('Sul')" class="text-xs font-bold px-3 py-1.5 rounded-full bg-violet-500 text-white shadow-sm hover:scale-105 transition">Sul 🧉</button>
+        <button onclick="filterRegion('TODAS')" class="text-xs font-bold px-3.5 py-1.5 rounded-full bg-slate-800 text-white shadow-sm hover:scale-105 transition">Todos</button>
+        <button onclick="filterRegion('Norte')" class="text-xs font-bold px-3.5 py-1.5 rounded-full bg-emerald-500 text-white shadow-sm hover:scale-105 transition">Norte 🌳</button>
+        <button onclick="filterRegion('Nordeste')" class="text-xs font-bold px-3.5 py-1.5 rounded-full bg-amber-500 text-white shadow-sm hover:scale-105 transition">Nordeste ☀️</button>
+        <button onclick="filterRegion('Centro-Oeste')" class="text-xs font-bold px-3.5 py-1.5 rounded-full bg-sky-500 text-white shadow-sm hover:scale-105 transition">Centro-Oeste 🏛️</button>
+        <button onclick="filterRegion('Sudeste')" class="text-xs font-bold px-3.5 py-1.5 rounded-full bg-orange-500 text-white shadow-sm hover:scale-105 transition">Sudeste 🏙️</button>
+        <button onclick="filterRegion('Sul')" class="text-xs font-bold px-3.5 py-1.5 rounded-full bg-violet-500 text-white shadow-sm hover:scale-105 transition">Sul 🧉</button>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        <!-- Contêiner do Mapa SVG Realista -->
-        <div class="lg:col-span-7 bg-white rounded-3xl p-4 md:p-6 shadow-md border-2 border-emerald-100 flex flex-col items-center relative min-h-[460px]">
+        <!-- Contêiner do Mapa SVG Realista Embutido -->
+        <div class="lg:col-span-7 bg-white rounded-3xl p-4 md:p-6 shadow-md border-2 border-emerald-100 flex flex-col items-center relative">
           
-          <div id="map-loading" class="absolute inset-0 bg-white/90 rounded-3xl flex flex-col items-center justify-center gap-2 z-10">
-            <div class="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-            <span class="text-xs font-bold text-emerald-800">A carregar o mapa geográfico do Brasil...</span>
-          </div>
+          <div class="w-full flex justify-center">
+            <!-- SVG Cartográfico Embutido do Brasil -->
+            <svg id="brazil-svg" viewBox="0 0 620 620" class="w-full max-w-[560px] h-auto drop-shadow-sm select-none">
+              
+              <!-- REGIÃO NORTE (Verde) -->
+              <!-- RR -->
+              <path id="uf-RR" class="state-path" fill="#10b981" onclick="selectState('RR')" d="M 200,45 L 235,35 L 245,75 L 225,120 L 195,115 L 180,80 Z"/>
+              <text x="215" y="75" class="state-label">RR</text>
 
-          <!-- SVG onde os estados serão desenhados com precisão -->
-          <div id="brazil-map-container" class="w-full flex justify-center">
-            <svg id="brazil-svg" viewBox="0 0 650 620" class="w-full max-w-[550px] h-auto drop-shadow-sm"></svg>
-          </div>
+              <!-- AP -->
+              <path id="uf-AP" class="state-path" fill="#10b981" onclick="selectState('AP')" d="M 345,65 L 375,60 L 370,115 L 340,110 Z"/>
+              <text x="358" y="85" class="state-label">AP</text>
 
-          <!-- Tooltip flutuante no mapa -->
-          <div id="map-tooltip" class="tooltip-map opacity-0 bg-slate-900 text-white text-xs font-bold py-1 px-3 rounded-lg shadow-lg z-20"></div>
+              <!-- AM -->
+              <path id="uf-AM" class="state-path" fill="#10b981" onclick="selectState('AM')" d="M 65,115 L 175,75 L 195,115 L 225,120 L 235,160 L 210,210 L 130,220 L 80,185 Z"/>
+              <text x="145" y="150" class="state-label text-sm">AM</text>
+
+              <!-- PA -->
+              <path id="uf-PA" class="state-path" fill="#10b981" onclick="selectState('PA')" d="M 235,80 L 345,65 L 340,110 L 385,130 L 375,195 L 330,225 L 275,225 L 235,160 Z"/>
+              <text x="305" y="155" class="state-label text-sm">PA</text>
+
+              <!-- AC -->
+              <path id="uf-AC" class="state-path" fill="#10b981" onclick="selectState('AC')" d="M 25,185 L 80,185 L 95,220 L 45,235 Z"/>
+              <text x="60" y="210" class="state-label">AC</text>
+
+              <!-- RO -->
+              <path id="uf-RO" class="state-path" fill="#10b981" onclick="selectState('RO')" d="M 130,220 L 175,215 L 180,265 L 135,270 Z"/>
+              <text x="155" y="245" class="state-label">RO</text>
+
+              <!-- TO -->
+              <path id="uf-TO" class="state-path" fill="#10b981" onclick="selectState('TO')" d="M 330,200 L 360,195 L 360,285 L 325,290 L 325,225 Z"/>
+              <text x="342" y="245" class="state-label">TO</text>
+
+              <!-- REGIÃO NORDESTE (Amarelo / Âmbar) -->
+              <!-- MA -->
+              <path id="uf-MA" class="state-path" fill="#f59e0b" onclick="selectState('MA')" d="M 375,135 L 425,145 L 415,215 L 365,200 Z"/>
+              <text x="395" y="175" class="state-label">MA</text>
+
+              <!-- PI -->
+              <path id="uf-PI" class="state-path" fill="#f59e0b" onclick="selectState('PI')" d="M 425,145 L 455,165 L 435,245 L 410,240 L 415,215 Z"/>
+              <text x="430" y="200" class="state-label">PI</text>
+
+              <!-- CE -->
+              <path id="uf-CE" class="state-path" fill="#f59e0b" onclick="selectState('CE')" d="M 455,150 L 495,155 L 490,195 L 455,180 Z"/>
+              <text x="475" y="172" class="state-label">CE</text>
+
+              <!-- RN -->
+              <path id="uf-RN" class="state-path" fill="#f59e0b" onclick="selectState('RN')" d="M 495,155 L 535,165 L 520,185 L 490,185 Z"/>
+              <text x="510" y="172" class="state-label text-[10px]">RN</text>
+
+              <!-- PB -->
+              <path id="uf-PB" class="state-path" fill="#f59e0b" onclick="selectState('PB')" d="M 490,185 L 535,185 L 530,205 L 485,200 Z"/>
+              <text x="510" y="195" class="state-label text-[10px]">PB</text>
+
+              <!-- PE -->
+              <path id="uf-PE" class="state-path" fill="#f59e0b" onclick="selectState('PE')" d="M 445,205 L 530,205 L 525,225 L 440,225 Z"/>
+              <text x="485" y="215" class="state-label text-[10px]">PE</text>
+
+              <!-- AL -->
+              <path id="uf-AL" class="state-path" fill="#f59e0b" onclick="selectState('AL')" d="M 495,225 L 525,225 L 515,245 L 490,240 Z"/>
+              <text x="508" y="235" class="state-label text-[9px]">AL</text>
+
+              <!-- SE -->
+              <path id="uf-SE" class="state-path" fill="#f59e0b" onclick="selectState('SE')" d="M 480,240 L 510,245 L 500,260 L 475,255 Z"/>
+              <text x="492" y="250" class="state-label text-[9px]">SE</text>
+
+              <!-- BA -->
+              <path id="uf-BA" class="state-path" fill="#f59e0b" onclick="selectState('BA')" d="M 385,230 L 445,225 L 495,245 L 485,325 L 415,335 L 380,290 Z"/>
+              <text x="440" y="280" class="state-label text-sm">BA</text>
+
+              <!-- REGIÃO CENTRO-OESTE (Azul Céu) -->
+              <!-- MT -->
+              <path id="uf-MT" class="state-path" fill="#0ea5e9" onclick="selectState('MT')" d="M 185,215 L 275,225 L 315,280 L 270,345 L 210,340 L 180,265 Z"/>
+              <text x="245" y="285" class="state-label text-sm">MT</text>
+
+              <!-- GO -->
+              <path id="uf-GO" class="state-path" fill="#0ea5e9" onclick="selectState('GO')" d="M 315,280 L 360,285 L 365,355 L 310,365 L 275,340 Z"/>
+              <text x="325" y="325" class="state-label">GO</text>
+
+              <!-- DF (Distrito Federal com Pulsar) -->
+              <circle id="uf-DF" cx="342" cy="318" r="9" fill="#e11d48" stroke="#ffffff" stroke-width="2.5" class="cursor-pointer animate-pulse" onclick="selectState('DF')"/>
+              <text x="342" y="318" class="state-label text-[8px]">DF</text>
+
+              <!-- MS -->
+              <path id="uf-MS" class="state-path" fill="#0ea5e9" onclick="selectState('MS')" d="M 220,345 L 285,345 L 290,425 L 235,420 Z"/>
+              <text x="260" y="385" class="state-label">MS</text>
+
+              <!-- REGIÃO SUDESTE (Laranja) -->
+              <!-- MG -->
+              <path id="uf-MG" class="state-path" fill="#f97316" onclick="selectState('MG')" d="M 365,315 L 445,335 L 435,405 L 365,415 L 340,365 Z"/>
+              <text x="395" y="365" class="state-label text-sm">MG</text>
+
+              <!-- ES -->
+              <path id="uf-ES" class="state-path" fill="#f97316" onclick="selectState('ES')" d="M 445,345 L 470,355 L 455,395 L 435,390 Z"/>
+              <text x="452" y="372" class="state-label text-[10px]">ES</text>
+
+              <!-- RJ -->
+              <path id="uf-RJ" class="state-path" fill="#f97316" onclick="selectState('RJ')" d="M 405,405 L 450,400 L 435,425 L 395,420 Z"/>
+              <text x="425" y="412" class="state-label text-[10px]">RJ</text>
+
+              <!-- SP -->
+              <path id="uf-SP" class="state-path" fill="#f97316" onclick="selectState('SP')" d="M 290,390 L 365,400 L 365,445 L 295,440 Z"/>
+              <text x="330" y="420" class="state-label">SP</text>
+
+              <!-- REGIÃO SUL (Roxo / Violeta) -->
+              <!-- PR -->
+              <path id="uf-PR" class="state-path" fill="#8b5cf6" onclick="selectState('PR')" d="M 285,440 L 350,445 L 340,485 L 270,475 Z"/>
+              <text x="310" y="462" class="state-label">PR</text>
+
+              <!-- SC -->
+              <path id="uf-SC" class="state-path" fill="#8b5cf6" onclick="selectState('SC')" d="M 280,480 L 345,485 L 335,515 L 275,510 Z"/>
+              <text x="310" y="498" class="state-label">SC</text>
+
+              <!-- RS -->
+              <path id="uf-RS" class="state-path" fill="#8b5cf6" onclick="selectState('RS')" d="M 265,515 L 335,515 L 320,580 L 250,575 Z"/>
+              <text x="290" y="545" class="state-label">RS</text>
+
+            </svg>
+          </div>
 
           <!-- Legenda de Cores -->
           <div class="mt-4 flex flex-wrap justify-center gap-3 text-[11px] font-bold text-slate-600">
@@ -166,9 +274,7 @@
       </div>
     </section>
 
-    <!-- ============================================== -->
     <!-- ABA 2: OS 3 PODERES -->
-    <!-- ============================================== -->
     <section id="section-poderes" class="space-y-6 hidden">
       <div class="text-center max-w-2xl mx-auto">
         <span class="bg-teal-100 text-teal-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Equilíbrio da Democracia</span>
@@ -233,9 +339,7 @@
       </div>
     </section>
 
-    <!-- ============================================== -->
     <!-- ABA 3: SUPER QUIZ INTERATIVO -->
-    <!-- ============================================== -->
     <section id="section-quiz" class="space-y-6 hidden">
       <div class="max-w-2xl mx-auto bg-white rounded-3xl p-6 md:p-8 shadow-lg border-4 border-amber-300">
         
@@ -289,37 +393,36 @@
     <p>💡 Feito com carinho para ensinar Geografia e Cidadania para crianças do Brasil.</p>
   </footer>
 
-  <!-- Lógica JavaScript com Dados Geográficos Reais -->
+  <!-- Lógica JavaScript -->
   <script>
-    // 1. Dados dos Estados Brasileiros
     const statesData = {
-      "AC": { name: "Acre", capital: "Rio Branco", region: "Norte", color: "#10b981" },
-      "AL": { name: "Alagoas", capital: "Maceió", region: "Nordeste", color: "#f59e0b" },
-      "AP": { name: "Amapá", capital: "Macapá", region: "Norte", color: "#10b981" },
-      "AM": { name: "Amazonas", capital: "Manaus", region: "Norte", color: "#10b981" },
-      "BA": { name: "Bahia", capital: "Salvador", region: "Nordeste", color: "#f59e0b" },
-      "CE": { name: "Ceará", capital: "Fortaleza", region: "Nordeste", color: "#f59e0b" },
-      "DF": { name: "Distrito Federal", capital: "Brasília (Capital Nacional)", region: "Centro-Oeste", color: "#0ea5e9" },
-      "ES": { name: "Espírito Santo", capital: "Vitória", region: "Sudeste", color: "#f97316" },
-      "GO": { name: "Goiás", capital: "Goiânia", region: "Centro-Oeste", color: "#0ea5e9" },
-      "MA": { name: "Maranhão", capital: "São Luís", region: "Nordeste", color: "#f59e0b" },
-      "MT": { name: "Mato Grosso", capital: "Cuiabá", region: "Centro-Oeste", color: "#0ea5e9" },
-      "MS": { name: "Mato Grosso do Sul", capital: "Campo Grande", region: "Centro-Oeste", color: "#0ea5e9" },
-      "MG": { name: "Minas Gerais", capital: "Belo Horizonte", region: "Sudeste", color: "#f97316" },
-      "PA": { name: "Pará", capital: "Belém", region: "Norte", color: "#10b981" },
-      "PB": { name: "Paraíba", capital: "João Pessoa", region: "Nordeste", color: "#f59e0b" },
-      "PR": { name: "Paraná", capital: "Curitiba", region: "Sul", color: "#8b5cf6" },
-      "PE": { name: "Pernambuco", capital: "Recife", region: "Nordeste", color: "#f59e0b" },
-      "PI": { name: "Piauí", capital: "Teresina", region: "Nordeste", color: "#f59e0b" },
-      "RJ": { name: "Rio de Janeiro", capital: "Rio de Janeiro", region: "Sudeste", color: "#f97316" },
-      "RN": { name: "Rio Grande do Norte", capital: "Natal", region: "Nordeste", color: "#f59e0b" },
-      "RS": { name: "Rio Grande do Sul", capital: "Porto Alegre", region: "Sul", color: "#8b5cf6" },
-      "RO": { name: "Rondônia", capital: "Porto Velho", region: "Norte", color: "#10b981" },
-      "RR": { name: "Roraima", capital: "Boa Vista", region: "Norte", color: "#10b981" },
-      "SC": { name: "Santa Catarina", capital: "Florianópolis", region: "Sul", color: "#8b5cf6" },
-      "SP": { name: "São Paulo", capital: "São Paulo", region: "Sudeste", color: "#f97316" },
-      "SE": { name: "Sergipe", capital: "Aracaju", region: "Nordeste", color: "#f59e0b" },
-      "TO": { name: "Tocantins", capital: "Palmas", region: "Norte", color: "#10b981" }
+      "AC": { name: "Acre", capital: "Rio Branco", region: "Norte" },
+      "AL": { name: "Alagoas", capital: "Maceió", region: "Nordeste" },
+      "AP": { name: "Amapá", capital: "Macapá", region: "Norte" },
+      "AM": { name: "Amazonas", capital: "Manaus", region: "Norte" },
+      "BA": { name: "Bahia", capital: "Salvador", region: "Nordeste" },
+      "CE": { name: "Ceará", capital: "Fortaleza", region: "Nordeste" },
+      "DF": { name: "Distrito Federal", capital: "Brasília (Capital Nacional)", region: "Centro-Oeste" },
+      "ES": { name: "Espírito Santo", capital: "Vitória", region: "Sudeste" },
+      "GO": { name: "Goiás", capital: "Goiânia", region: "Centro-Oeste" },
+      "MA": { name: "Maranhão", capital: "São Luís", region: "Nordeste" },
+      "MT": { name: "Mato Grosso", capital: "Cuiabá", region: "Centro-Oeste" },
+      "MS": { name: "Mato Grosso do Sul", capital: "Campo Grande", region: "Centro-Oeste" },
+      "MG": { name: "Minas Gerais", capital: "Belo Horizonte", region: "Sudeste" },
+      "PA": { name: "Pará", capital: "Belém", region: "Norte" },
+      "PB": { name: "Paraíba", capital: "João Pessoa", region: "Nordeste" },
+      "PR": { name: "Paraná", capital: "Curitiba", region: "Sul" },
+      "PE": { name: "Pernambuco", capital: "Recife", region: "Nordeste" },
+      "PI": { name: "Piauí", capital: "Teresina", region: "Nordeste" },
+      "RJ": { name: "Rio de Janeiro", capital: "Rio de Janeiro", region: "Sudeste" },
+      "RN": { name: "Rio Grande do Norte", capital: "Natal", region: "Nordeste" },
+      "RS": { name: "Rio Grande do Sul", capital: "Porto Alegre", region: "Sul" },
+      "RO": { name: "Rondônia", capital: "Porto Velho", region: "Norte" },
+      "RR": { name: "Roraima", capital: "Boa Vista", region: "Norte" },
+      "SC": { name: "Santa Catarina", capital: "Florianópolis", region: "Sul" },
+      "SP": { name: "São Paulo", capital: "São Paulo", region: "Sudeste" },
+      "SE": { name: "Sergipe", capital: "Aracaju", region: "Nordeste" },
+      "TO": { name: "Tocantins", capital: "Palmas", region: "Norte" }
     };
 
     const regionBorderColors = {
@@ -330,81 +433,32 @@
       "Sul": "border-violet-500"
     };
 
-    let selectedUF = "DF";
+    const regionBgTags = {
+      "Norte": "bg-emerald-100 text-emerald-800",
+      "Nordeste": "bg-amber-100 text-amber-800",
+      "Centro-Oeste": "bg-sky-100 text-sky-800",
+      "Sudeste": "bg-orange-100 text-orange-800",
+      "Sul": "bg-violet-100 text-violet-800"
+    };
 
-    // 2. Renderização do Mapa Cartográfico com D3.js (GeoJSON Real do IBGE)
-    async function initBrazilMap() {
-      const svg = d3.select("#brazil-svg");
-      const tooltip = document.getElementById("map-tooltip");
-      const loading = document.getElementById("map-loading");
-
-      try {
-        // Carrega o GeoJSON dos estados brasileiros
-        const response = await fetch("https://raw.githubusercontent.com/codeforamerica/click_test/master/maps/geojson/brazil-states.geojson");
-        const geoData = await response.json();
-
-        // Projeção Mercator ajustada perfeitamente ao tamanho do SVG
-        const projection = d3.geoMercator().fitSize([650, 600], geoData);
-        const pathGenerator = d3.geoPath().projection(projection);
-
-        svg.selectAll("path")
-          .data(geoData.features)
-          .enter()
-          .append("path")
-          .attr("d", pathGenerator)
-          .attr("id", d => `uf-${d.properties.sigla || d.id}`)
-          .attr("class", "state-path")
-          .attr("fill", d => {
-            const uf = d.properties.sigla || d.id;
-            return statesData[uf] ? statesData[uf].color : "#cbd5e1";
-          })
-          .on("mouseover", (event, d) => {
-            const uf = d.properties.sigla || d.id;
-            const state = statesData[uf] || { name: d.properties.name, region: "" };
-            tooltip.innerHTML = `${state.name} (${uf}) - Região ${state.region}`;
-            tooltip.style.opacity = "1";
-            tooltip.style.left = `${event.pageX + 10}px`;
-            tooltip.style.top = `${event.pageY - 25}px`;
-          })
-          .on("mousemove", (event) => {
-            tooltip.style.left = `${event.pageX + 10}px`;
-            tooltip.style.top = `${event.pageY - 25}px`;
-          })
-          .on("mouseout", () => {
-            tooltip.style.opacity = "0";
-          })
-          .on("click", (event, d) => {
-            const uf = d.properties.sigla || d.id;
-            selectState(uf);
-          });
-
-        loading.classList.add("hidden");
-        selectState("DF");
-      } catch (err) {
-        console.warn("GeoJSON externo não carregou, ativando mapa vetorial offline:", err);
-        loading.classList.add("hidden");
-      }
-    }
-
-    // 3. Atualizar Painel de Informações ao Clicar no Estado
     function selectState(uf) {
-      selectedUF = uf;
       const state = statesData[uf];
       if (!state) return;
 
-      // Destacar estado no mapa SVG
-      document.querySelectorAll(".state-path").forEach(el => el.classList.remove("state-active"));
-      const stateElement = document.getElementById(`uf-${uf}`);
-      if (stateElement) stateElement.classList.add("state-active");
+      document.querySelectorAll(".state-path, circle").forEach(el => el.classList.remove("state-active"));
+      const activeEl = document.getElementById(`uf-${uf}`);
+      if (activeEl) activeEl.classList.add("state-active");
 
-      // Atualizar Card de Detalhes
       const card = document.getElementById("state-card");
-      card.className = `bg-white rounded-3xl p-6 shadow-md border-l-8 ${regionBorderColors[state.region] || 'border-slate-500'} transition-all`;
+      card.className = `bg-white rounded-3xl p-6 shadow-md border-l-8 ${regionBorderColors[state.region]} transition-all`;
       
-      document.getElementById("state-badge-region").innerText = `Região ${state.region}`;
+      const badge = document.getElementById("state-badge-region");
+      badge.className = `text-xs uppercase font-bold tracking-wider px-3 py-1 rounded-full ${regionBgTags[state.region]}`;
+      badge.innerText = `Região ${state.region}`;
+
       document.getElementById("state-uf-badge").innerText = uf;
-      document.getElementById("state-title").innerText = `${state.name}`;
-      document.getElementById("state-capital").innerText = `Capital Estadual: ${state.capital}`;
+      document.getElementById("state-title").innerText = state.name;
+      document.getElementById("state-capital").innerText = `Capital: ${state.capital}`;
 
       const govInfo = document.getElementById("state-gov-info");
       if (uf === "DF") {
@@ -414,29 +468,24 @@
         `;
       } else {
         govInfo.innerHTML = `
-          <p><b>🗺️ No Nível Estadual (${state.name}):</b> O <b>Governador(a)</b> e os <b>Deputados Estaduais</b> administram as polícias, hospitais maiores e as estradas deste estado.</p>
-          <p><b>🏙️ No Nível Municipal:</b> Cada cidade de ${state.name} tem o seu próprio <b>Prefeito(a)</b> e <b>Vereadores</b> cuidando das ruas, postos de saúde e praças locais.</p>
+          <p><b>🗺️ No Nível Estadual (${state.name}):</b> O <b>Governador(a)</b> e os <b>Deputados Estaduais</b> administram as polícias estaduais, hospitais de referência e rodovias.</p>
+          <p><b>🏙️ No Nível Municipal:</b> Cada cidade deste estado tem o seu próprio <b>Prefeito(a)</b> e <b>Vereadores</b> cuidando dos bairros, escolas municipais e praças.</p>
         `;
       }
     }
 
-    // 4. Filtrar por Região
     function filterRegion(reg) {
-      document.querySelectorAll(".state-path").forEach(path => {
-        const uf = path.id.replace("uf-", "");
-        const state = statesData[uf];
-        if (!state) return;
-
-        if (reg === "TODAS" || state.region === reg) {
+      Object.keys(statesData).forEach(uf => {
+        const path = document.getElementById(`uf-${uf}`);
+        if (!path) return;
+        if (reg === "TODAS" || statesData[uf].region === reg) {
           path.style.opacity = "1";
-          path.style.transform = "scale(1)";
         } else {
           path.style.opacity = "0.2";
         }
       });
     }
 
-    // 5. Navegação das Abas
     function setTab(tab) {
       ['mapa', 'poderes', 'quiz'].forEach(t => {
         document.getElementById(`section-${t}`).classList.add('hidden');
@@ -449,13 +498,12 @@
       activeBtn.className = 'tab-btn px-4 py-2 rounded-full font-bold text-sm transition shadow-sm bg-white text-emerald-700';
     }
 
-    // 6. Super Quiz Cidadão
     const quizQuestions = [
       {
         question: "Quem é o responsável por asfaltar a rua e cuidar da pracinha do teu bairro?",
         options: ["O(A) Prefeito(a) da Cidade", "O Presidente do País", "O Diretor da Escola", "O Juiz do Tribunal"],
         correct: 0,
-        explanation: "Muito bem! A Prefeitura (Nível Municipal) cuida das praças, da limpeza da rua e dos postos de saúde."
+        explanation: "Muito bem! A Prefeitura (Nível Municipal) cuida das praças, da limpeza da rua e dos postos de saúde da cidade."
       },
       {
         question: "Qual é a principal função do Poder Legislativo (Vereadores e Deputados)?",
@@ -531,7 +579,7 @@
       } else {
         document.getElementById('quiz-container').classList.add('hidden');
         document.getElementById('quiz-end').classList.remove('hidden');
-        document.getElementById('final-message').innerText = `Conseguiste ${score} de 100 pontos! Aprendeste tudo sobre o nosso Brasil.`;
+        document.getElementById('final-message').innerText = `Conseguiste ${score} de 100 pontos! Parabéns pelo aprendizado.`;
       }
     }
 
@@ -544,9 +592,8 @@
       renderQuestion();
     }
 
-    // Inicialização ao carregar a página
     window.addEventListener('DOMContentLoaded', () => {
-      initBrazilMap();
+      selectState('DF');
       renderQuestion();
     });
   </script>

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exploradores do Brasil: Como Funciona o Nosso País!</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Nunito', sans-serif;
+    }
+    h1, h2, h3, .brand-font {
+      font-family: 'Fredoka', cursive;
+    }
+    .region-path {
+      cursor: pointer;
+      transition: all 0.25s ease-in-out;
+    }
+    .region-path:hover {
+      filter: brightness(1.15) drop-shadow(0px 4px 8px rgba(0,0,0,0.15));
+      transform: scale(1.01);
+      transform-origin: center;
+    }
+    .region-active {
+      stroke: #1e293b !important;
+      stroke-width: 3px !important;
+      filter: brightness(1.1);
+    }
+  </style>
+</head>
+<body class="bg-amber-50 text-slate-800 min-h-screen flex flex-col antialiased">
+
+  <header class="bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white shadow-lg py-5 px-4 sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <span class="text-4xl animate-bounce">🇧🇷</span>
+        <div>
+          <h1 class="text-2xl md:text-3xl font-bold tracking-wide">Missão Brasil!</h1>
+          <p class="text-emerald-100 text-xs md:text-sm font-semibold">Descobre a Geografia e a Democracia do nosso país</p>
+        </div>
+      </div>
+      
+      <nav class="flex flex-wrap justify-center gap-2">
+        <button onclick="setTab('mapa')" id="btn-mapa" class="tab-btn px-4 py-2 rounded-full font-bold text-sm transition shadow-sm bg-white text-emerald-700">
+          🗺️ Mapa & Níveis
+        </button>
+        <button onclick="setTab('poderes')" id="btn-poderes" class="tab-btn px-4 py-2 rounded-full font-bold text-sm transition bg-emerald-700/50 hover:bg-emerald-700 text-white">
+          ⚡ Os 3 Poderes
+        </button>
+        <button onclick="setTab('quiz')" id="btn-quiz" class="tab-btn px-4 py-2 rounded-full font-bold text-sm transition bg-emerald-700/50 hover:bg-emerald-700 text-white">
+          🎮 Super Quiz
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto w-full flex-grow p-4 md:p-6">
+
+    <section id="section-mapa" class="space-y-6">
+      <div class="text-center max-w-2xl mx-auto">
+        <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Exploração Interativa</span>
+        <h2 class="text-2xl md:text-3xl font-bold text-emerald-900 mt-2">Clica no Mapa para Explorar!</h2>
+        <p class="text-slate-600 text-sm mt-1">Clica nas regiões coloridas para descobrir como o Brasil organiza as cidades, os estados e o país inteiro.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <div class="lg:col-span-6 bg-white rounded-3xl p-6 shadow-md border-2 border-emerald-100 flex flex-col items-center">
+          <div class="w-full max-w-md">
+            <svg viewBox="0 0 500 500" class="w-full h-auto drop-shadow-sm" xmlns="http://www.w3.org/2000/svg">
+              <path id="reg-norte" class="region-path fill-emerald-400 stroke-white stroke-2"
+                d="M 50 140 Q 120 70 240 90 L 300 150 L 250 200 L 190 200 L 160 270 L 80 250 L 50 200 Z"
+                onclick="selectRegion('norte')">
+              </path>
+              <text x="145" y="165" font-family="Fredoka" font-weight="bold" font-size="16" fill="#064e3b" pointer-events="none">Norte</text>
+
+              <path id="reg-nordeste" class="region-path fill-amber-400 stroke-white stroke-2"
+                d="M 300 150 Q 390 120 460 190 L 430 270 L 340 270 L 310 230 L 250 200 Z"
+                onclick="selectRegion('nordeste')">
+              </path>
+              <text x="350" y="215" font-family="Fredoka" font-weight="bold" font-size="16" fill="#78350f" pointer-events="none">Nordeste</text>
+
+              <path id="reg-centro-oeste" class="region-path fill-sky-400 stroke-white stroke-2"
+                d="M 160 270 L 190 200 L 250 200 L 310 230 L 320 330 L 240 370 L 190 350 Z"
+                onclick="selectRegion('centro-oeste')">
+              </path>
+              <text x="200" y="295" font-family="Fredoka" font-weight="bold" font-size="15" fill="#0c4a6e" pointer-events="none">Centro-Oeste</text>
+
+              <circle cx="280" cy="275" r="8" fill="#e11d48" stroke="#ffffff" stroke-width="2" class="animate-pulse" />
+              <text x="292" y="278" font-family="Nunito" font-weight="900" font-size="11" fill="#be123c">DF (Brasília)</text>
+
+              <path id="reg-sudeste" class="region-path fill-orange-400 stroke-white stroke-2"
+                d="M 310 230 L 340 270 L 430 270 L 390 370 L 290 380 L 320 330 Z"
+                onclick="selectRegion('sudeste')">
+              </path>
+              <text x="330" y="325" font-family="Fredoka" font-weight="bold" font-size="15" fill="#7c2d12" pointer-events="none">Sudeste</text>
+
+              <path id="reg-sul" class="region-path fill-violet-400 stroke-white stroke-2"
+                d="M 240 370 L 290 380 L 270 470 L 210 440 L 200 400 Z"
+                onclick="selectRegion('sul')">
+              </path>
+              <text x="235" y="425" font-family="Fredoka" font-weight="bold" font-size="15" fill="#4c1d95" pointer-events="none">Sul</text>
+            </svg>
+          </div>
+          <p class="text-xs text-slate-400 mt-2">Dica: Clica numa região do mapa para ver os detalhes!</p>
+        </div>
+
+        <div class="lg:col-span-6 space-y-4">
+          <div id="region-card" class="bg-white rounded-3xl p-6 shadow-md border-l-8 border-sky-400">
+            <div class="flex items-center justify-between mb-2">
+              <span id="card-tag" class="text-xs uppercase font-bold tracking-wider px-3 py-1 rounded-full bg-sky-100 text-sky-800">Centro-Oeste</span>
+              <span id="card-icon" class="text-3xl">🏛️</span>
+            </div>
+            <h3 id="card-title" class="text-2xl font-bold text-slate-800">Coração das Decisões Nacionais</h3>
+            <p id="card-description" class="text-slate-600 text-sm mt-2 leading-relaxed">
+              No Centro-Oeste fica o <b>Distrito Federal (Brasília)</b>, a capital de todo o Brasil! É aqui que trabalha o <b>Presidente da República</b>, os <b>Deputados Federais</b> e os <b>Senadores</b>.
+            </p>
+
+            <div class="mt-4 pt-4 border-t border-slate-100 space-y-2 text-xs">
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+                <span><b>Nível Federal:</b> Leis e regras válidas para todos os 26 estados e o DF.</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-sky-500 inline-block"></span>
+                <span><b>Nível Estadual:</b> Governos que cuidam de cada estado (Goiás, Mato Grosso, etc.).</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+                <span><b>Nível Municipal:</b> Prefeituras que cuidam das cidades e bairros.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3 text-center">
+            <div class="bg-amber-100/70 p-3 rounded-2xl border border-amber-200">
+              <div class="text-2xl">🏡</div>
+              <div class="font-bold text-amber-900 text-xs mt-1">Município</div>
+              <div class="text-[11px] text-amber-700">Prefeito(a)</div>
+            </div>
+            <div class="bg-sky-100/70 p-3 rounded-2xl border border-sky-200">
+              <div class="text-2xl">🗺️</div>
+              <div class="font-bold text-sky-900 text-xs mt-1">Estado</div>
+              <div class="text-[11px] text-sky-700">Governador(a)</div>
+            </div>
+            <div class="bg-emerald-100/70 p-3 rounded-2xl border border-emerald-200">
+              <div class="text-2xl">👑</div>
+              <div class="font-bold text-emerald-900 text-xs mt-1">Federal</div>
+              <div class="text-[11px] text-emerald-700">Presidente</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="section-poderes" class="space-y-6 hidden">
+      <div class="text-center max-w-2xl mx-auto">
+        <span class="bg-teal-100 text-teal-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Como o Brasil é Administrado</span>
+        <h2 class="text-2xl md:text-3xl font-bold text-teal-900 mt-2">O Trio de Superpoderes</h2>
+        <p class="text-slate-600 text-sm mt-1">Ninguém manda sozinho! Cada poder tem uma função indispensável para que o país viva em harmonia e com justiça.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white rounded-3xl p-6 shadow-md border-t-8 border-violet-500 flex flex-col justify-between">
+          <div>
+            <div class="w-14 h-14 bg-violet-100 rounded-2xl flex items-center justify-center text-3xl mb-4">📜</div>
+            <h3 class="text-xl font-bold text-violet-900">Poder Legislativo</h3>
+            <p class="text-xs font-bold uppercase tracking-wider text-violet-600 mb-3">"Os Criadores das Regras"</p>
+            <p class="text-slate-600 text-sm leading-relaxed">
+              Ouvir a população, debater boas ideias e escrever as <b>leis</b> que garantem os direitos de todos.
+            </p>
+          </div>
+          <div class="mt-6 bg-violet-50 p-3.5 rounded-2xl text-xs text-violet-900">
+            <span class="font-bold">Quem são:</span><br>
+            • Na cidade: <b>Vereadores</b><br>
+            • No estado: <b>Deputados Estaduais</b><br>
+            • No país: <b>Deputados Federais e Senadores</b>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-3xl p-6 shadow-md border-t-8 border-orange-500 flex flex-col justify-between">
+          <div>
+            <div class="w-14 h-14 bg-orange-100 rounded-2xl flex items-center justify-center text-3xl mb-4">⚙️</div>
+            <h3 class="text-xl font-bold text-orange-900">Poder Executivo</h3>
+            <p class="text-xs font-bold uppercase tracking-wider text-orange-600 mb-3">"Quem Coloca em Prática"</p>
+            <p class="text-slate-600 text-sm leading-relaxed">
+              Administrar os recursos, construir escolas e hospitais, asfaltar ruas e cuidar dos serviços públicos.
+            </p>
+          </div>
+          <div class="mt-6 bg-orange-50 p-3.5 rounded-2xl text-xs text-orange-900">
+            <span class="font-bold">Quem são:</span><br>
+            • Na cidade: <b>Prefeito(a)</b><br>
+            • No estado: <b>Governador(a)</b><br>
+            • No país: <b>Presidente da República</b>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-3xl p-6 shadow-md border-t-8 border-rose-500 flex flex-col justify-between">
+          <div>
+            <div class="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center text-3xl mb-4">⚖️</div>
+            <h3 class="text-xl font-bold text-rose-900">Poder Judiciário</h3>
+            <p class="text-xs font-bold uppercase tracking-wider text-rose-600 mb-3">"Os Árbitros da Justiça"</p>
+            <p class="text-slate-600 text-sm leading-relaxed">
+              Verificar se todos estão a cumprir as leis e a Constituição, garantindo que os conflitos sejam resolvidos com justiça.
+            </p>
+          </div>
+          <div class="mt-6 bg-rose-50 p-3.5 rounded-2xl text-xs text-rose-900">
+            <span class="font-bold">Quem são:</span><br>
+            • <b>Juízes de Direito</b><br>
+            • <b>Desembargadores</b><br>
+            • <b>Ministros dos Tribunais (ex: STF)</b>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="section-quiz" class="space-y-6 hidden">
+      <div class="max-w-2xl mx-auto bg-white rounded-3xl p-6 md:p-8 shadow-lg border-4 border-amber-300">
+        
+        <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
+          <div>
+            <span class="text-xs font-bold uppercase text-amber-600 tracking-wider">Desafio Cidadão</span>
+            <h2 class="text-2xl font-bold text-slate-800">Quem Faz o Quê? 🎯</h2>
+          </div>
+          <div class="text-right">
+            <span class="text-xs font-bold text-slate-400">Pontuação</span>
+            <div id="quiz-score" class="text-2xl font-black text-amber-500">0 pts</div>
+          </div>
+        </div>
+
+        <div id="quiz-container">
+          <div class="flex items-center gap-2 mb-3">
+            <span id="question-number" class="text-xs font-bold bg-amber-100 text-amber-800 px-3 py-1 rounded-full">Pergunta 1 de 4</span>
+          </div>
+          <h3 id="question-text" class="text-lg md:text-xl font-bold text-slate-800 mb-6">Carregando pergunta...</h3>
+
+          <div id="options-container" class="space-y-3">
+            </div>
+
+          <div id="feedback-box" class="mt-6 p-4 rounded-2xl hidden">
+            <p id="feedback-text" class="text-sm font-semibold"></p>
+            <button onclick="nextQuestion()" id="btn-next" class="mt-3 px-5 py-2 bg-slate-800 text-white font-bold text-sm rounded-full shadow hover:bg-slate-700 transition">
+              Próxima Pergunta ➡️
+            </button>
+          </div>
+        </div>
+
+        <div id="quiz-end" class="text-center py-8 space-y-4 hidden">
+          <div class="text-6xl">🏆</div>
+          <h3 class="text-2xl font-bold text-slate-800">Parabéns, Jovem Cidadão!</h3>
+          <p id="final-message" class="text-slate-600 text-sm">Completaste a tua missão com sucesso!</p>
+          <button onclick="restartQuiz()" class="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-full shadow-md transition">
+            Jogar Novamente 🔄
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="bg-slate-800 text-slate-300 py-6 px-4 text-center text-xs mt-auto">
+    <p>💡 Feito com carinho para inspirar jovens cidadãos a conhecerem e cuidarem do Brasil.</p>
+  </footer>
+
+  <script>
+    // 1. Controle das Abas
+    function setTab(tab) {
+      const tabs = ['mapa', 'poderes', 'quiz'];
+      tabs.forEach(t => {
+        document.getElementById(`section-${t}`).classList.add('hidden');
+        const btn = document.getElementById(`btn-${t}`);
+        btn.className = 'tab-btn px-4 py-2 rounded-full font-bold text-sm transition bg-emerald-700/50 hover:bg-emerald-700 text-white';
+      });
+
+      document.getElementById(`section-${tab}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`btn-${tab}`);
+      activeBtn.className = 'tab-btn px-4 py-2 rounded-full font-bold text-sm transition shadow-sm bg-white text-emerald-700';
+    }
+
+    // 2. Dados e Interatividade do Mapa
+    const regionsData = {
+      'norte': {
+        name: 'Região Norte 🌳',
+        tag: 'Norte (Maior Área Florestal)',
+        icon: '🦜',
+        color: '#34d399',
+        borderClass: 'border-emerald-400',
+        bgTag: 'bg-emerald-100 text-emerald-800',
+        desc: 'Abriga a maior parte da Floresta Amazônica! Tem 7 estados (como Amazonas e Pará). O Governo Federal ajuda a cuidar das florestas nacionais e das fronteiras com outros países.'
+      },
+      'nordeste': {
+        name: 'Região Nordeste ☀️',
+        tag: 'Nordeste (9 Estados)',
+        icon: '🏖️',
+        color: '#fbbf24',
+        borderClass: 'border-amber-400',
+        bgTag: 'bg-amber-100 text-amber-800',
+        desc: 'Famoso pelo litoral, culinária e festas culturais. Cada um dos 9 estados tem o seu próprio Governador e Assembleia Legislativa para criar regras regionais.'
+      },
+      'centro-oeste': {
+        name: 'Região Centro-Oeste 🏛️',
+        tag: 'Centro-Oeste & Capital Federal',
+        icon: '🏛️',
+        color: '#38bdf8',
+        borderClass: 'border-sky-400',
+        bgTag: 'bg-sky-100 text-sky-800',
+        desc: 'Aqui fica o Distrito Federal (Brasília), onde estão sediados os 3 Poderes Nacionais: o Palácio do Planalto (Executivo), o Congresso Nacional (Legislativo) e o STF (Judiciário).'
+      },
+      'sudeste': {
+        name: 'Região Sudeste 🏭',
+        tag: 'Sudeste (Mais Populosa)',
+        icon: '🌆',
+        color: '#fb923c',
+        borderClass: 'border-orange-400',
+        bgTag: 'bg-orange-100 text-orange-800',
+        desc: 'Região com grandes cidades como São Paulo, Rio de Janeiro e Belo Horizonte. Tem milhares de Municípios, cada um liderado por um(a) Prefeito(a).'
+      },
+      'sul': {
+        name: 'Região Sul 🧉',
+        tag: 'Sul (Clima Ameno)',
+        icon: '🌲',
+        color: '#a78bfa',
+        borderClass: 'border-violet-400',
+        bgTag: 'bg-violet-100 text-violet-800',
+        desc: 'Composta por Paraná, Santa Catarina e Rio Grande do Sul. O poder público local cuida de portos, rodovias estaduais e parques naturais.'
+      }
+    };
+
+    function selectRegion(key) {
+      const data = regionsData[key];
+      if (!data) return;
+
+      // Atualiza bordas e destaques no SVG
+      document.querySelectorAll('.region-path').forEach(el => el.classList.remove('region-active'));
+      const activeEl = document.getElementById(`reg-${key}`);
+      if (activeEl) activeEl.classList.add('region-active');
+
+      // Atualiza card de informações
+      const card = document.getElementById('region-card');
+      card.className = `bg-white rounded-3xl p-6 shadow-md border-l-8 ${data.borderClass} transition-all duration-300`;
+      
+      const tag = document.getElementById('card-tag');
+      tag.className = `text-xs uppercase font-bold tracking-wider px-3 py-1 rounded-full ${data.bgTag}`;
+      tag.innerText = data.tag;
+
+      document.getElementById('card-icon').innerText = data.icon;
+      document.getElementById('card-title').innerText = data.name;
+      document.getElementById('card-description').innerHTML = data.desc;
+    }
+
+    // 3. Mini-game de Quiz
+    const quizQuestions = [
+      {
+        question: "Quem é o responsável por asfaltar a rua e cuidar da pracinha do teu bairro?",
+        options: ["O(A) Prefeito(a) da Cidade", "O Presidente do País", "O Diretor da Escola", "O Juiz do Tribunal"],
+        correct: 0,
+        explanation: "Muito bem! O Município (Prefeitura) é responsável pelas praças, postinhos de saúde e pela limpeza do teu bairro."
+      },
+      {
+        question: "Qual é a principal função do Poder Legislativo (Vereadores e Deputados)?",
+        options: ["Julgar os criminosos no tribunal", "Construir estradas e pontes", "Criar, debater e aprovar as leis", "Comandar as viaturas da polícia"],
+        correct: 2,
+        explanation: "Excelente! O Poder Legislativo é quem escreve as regras (leis) para organizar a sociedade."
+      },
+      {
+        question: "Onde fica localizada a sede do Governo Federal (Brasília)?",
+        options: ["Na Região Sul", "Na Região Centro-Oeste", "Na Região Norte", "Na Região Nordeste"],
+        correct: 1,
+        explanation: "Certíssimo! Brasília fica no Distrito Federal, situado na Região Centro-Oeste."
+      },
+      {
+        question: "O que faz o Poder Judiciário (Juízes e Tribunais)?",
+        options: ["Inventa novos impostos", "Fiscaliza e garante que todos cumpram a Constituição e as leis", "Pinta as escolas públicas", "Escolhe o Prefeito"],
+        correct: 1,
+        explanation: "Isso mesmo! O Judiciário funciona como o árbitro de um jogo: garante que as leis sejam respeitadas por todos."
+      }
+    ];
+
+    let currentQ = 0;
+    let score = 0;
+
+    function renderQuestion() {
+      const q = quizQuestions[currentQ];
+      document.getElementById('question-number').innerText = `Pergunta ${currentQ + 1} de ${quizQuestions.length}`;
+      document.getElementById('question-text').innerText = q.question;
+
+      const optsContainer = document.getElementById('options-container');
+      optsContainer.innerHTML = '';
+      document.getElementById('feedback-box').classList.add('hidden');
+
+      q.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = "w-full text-left p-4 rounded-2xl border-2 border-slate-200 hover:border-amber-400 hover:bg-amber-50 font-bold text-slate-700 transition flex items-center justify-between";
+        btn.innerHTML = `<span>${opt}</span><span class="text-slate-300">👉</span>`;
+        btn.onclick = () => checkAnswer(idx);
+        optsContainer.appendChild(btn);
+      });
+    }
+
+    function checkAnswer(chosenIdx) {
+      const q = quizQuestions[currentQ];
+      const feedbackBox = document.getElementById('feedback-box');
+      const feedbackText = document.getElementById('feedback-text');
+      const allBtns = document.getElementById('options-container').querySelectorAll('button');
+
+      allBtns.forEach(btn => btn.disabled = true);
+
+      if (chosenIdx === q.correct) {
+        score += 25;
+        document.getElementById('quiz-score').innerText = `${score} pts`;
+        feedbackBox.className = "mt-6 p-4 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-900";
+        feedbackText.innerHTML = `✨ <b>Correto!</b> ${q.explanation}`;
+      } else {
+        feedbackBox.className = "mt-6 p-4 rounded-2xl bg-rose-100 border border-rose-300 text-rose-900";
+        feedbackText.innerHTML = `💡 <b>Quase lá!</b> ${q.explanation}`;
+      }
+      feedbackBox.classList.remove('hidden');
+    }
+
+    function nextQuestion() {
+      currentQ++;
+      if (currentQ < quizQuestions.length) {
+        renderQuestion();
+      } else {
+        document.getElementById('quiz-container').classList.add('hidden');
+        document.getElementById('quiz-end').classList.remove('hidden');
+        document.getElementById('final-message').innerText = `Alcançaste ${score} pontos! Aprendeste imenso sobre o nosso Brasil.`;
+      }
+    }
+
+    function restartQuiz() {
+      currentQ = 0;
+      score = 0;
+      document.getElementById('quiz-score').innerText = "0 pts";
+      document.getElementById('quiz-container').classList.remove('hidden');
+      document.getElementById('quiz-end').classList.add('hidden');
+      renderQuestion();
+    }
+
+    // Inicialização ao carregar
+    window.addEventListener('DOMContentLoaded', () => {
+      renderQuestion();
+      selectRegion('centro-oeste');
+    });
+  </script>
+</body>
+</html>

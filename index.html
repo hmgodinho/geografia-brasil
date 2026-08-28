@@ -5,14 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Exploradores do Brasil: Como Funciona o Nosso País!</title>
   
-  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- Leaflet CSS & JS (Mapa Cartográfico Real) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Fontes Google Lúdicas -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
@@ -25,7 +22,7 @@
       font-family: 'Fredoka', cursive;
     }
     #map {
-      height: 500px;
+      height: 480px;
       width: 100%;
       border-radius: 1.5rem;
       z-index: 10;
@@ -41,30 +38,29 @@
       font-family: 'Fredoka', cursive;
       font-weight: bold;
       font-size: 11px;
-      width: 32px;
-      height: 32px;
+      width: 30px;
+      height: 30px;
       border-radius: 9999px;
       border: 2px solid white;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 12px rgba(225, 29, 72, 0.9);
+      box-shadow: 0 0 10px rgba(225, 29, 72, 0.9);
       cursor: pointer;
       animation: pulse 1.5s infinite;
     }
     @keyframes pulse {
       0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.2); }
+      50% { transform: scale(1.15); }
     }
-    .leaflet-interactive {
-      cursor: pointer;
-      transition: fill-opacity 0.2s, stroke-width 0.2s;
+    .color-btn-active {
+      ring: 4px #0f172a;
+      transform: scale(1.15);
     }
   </style>
 </head>
 <body class="bg-amber-50 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-emerald-200">
 
-  <!-- Cabeçalho Principal -->
   <header class="bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white shadow-lg py-5 px-4 sticky top-0 z-50">
     <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
       <div class="flex items-center gap-3">
@@ -75,10 +71,9 @@
         </div>
       </div>
       
-      <!-- Navegação por Abas -->
       <nav class="flex flex-wrap justify-center gap-2">
         <button onclick="setTab('mapa')" id="btn-mapa" class="tab-btn px-4 py-2 rounded-full font-bold text-sm transition shadow-sm bg-white text-emerald-700">
-          🗺️ Mapa das Regiões
+          🗺️ Pinte o Brasil
         </button>
         <button onclick="setTab('poderes')" id="btn-poderes" class="tab-btn px-4 py-2 rounded-full font-bold text-sm transition bg-emerald-700/50 hover:bg-emerald-700 text-white">
           ⚡ Os 3 Poderes
@@ -90,48 +85,48 @@
     </div>
   </header>
 
-  <!-- Conteúdo Principal -->
   <main class="max-w-6xl mx-auto w-full flex-grow p-4 md:p-6">
 
-    <!-- ============================================== -->
-    <!-- ABA 1: MAPA COLORIDO POR REGIÕES -->
-    <!-- ============================================== -->
     <section id="section-mapa" class="space-y-6">
       
       <div class="text-center max-w-2xl mx-auto">
-        <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Geografia Interativa</span>
-        <h2 class="text-2xl md:text-3xl font-bold text-emerald-900 mt-2">Os Estados e as 5 Regiões do Brasil</h2>
-        <p class="text-slate-600 text-sm mt-1">Cada região tem a sua cor! Clica em qualquer estado no mapa para ver quem governa e como tudo funciona.</p>
+        <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Ateliê Geográfico</span>
+        <h2 class="text-2xl md:text-3xl font-bold text-emerald-900 mt-2">Escolha uma Cor e Pinte o Mapa!</h2>
+        <p class="text-slate-600 text-sm mt-1">Clica numa cor abaixo e depois clica em qualquer estado para colori-lo como quiser!</p>
       </div>
 
-      <!-- Filtros Rápidos de Regiões -->
-      <div class="flex flex-wrap items-center justify-center gap-2">
-        <span class="text-xs font-bold text-slate-500 mr-1">Filtrar por Região:</span>
-        <button onclick="filterRegion('TODAS')" class="text-xs font-bold px-3.5 py-1.5 rounded-full bg-slate-800 text-white shadow-sm hover:scale-105 transition">Todas as Regiões</button>
-        <button onclick="filterRegion('Norte')" class="text-xs font-bold px-3.5 py-1.5 rounded-full bg-emerald-500 text-white shadow-sm hover:scale-105 transition">Norte 🌳</button>
-        <button onclick="filterRegion('Nordeste')" class="text-xs font-bold px-3.5 py-1.5 rounded-full bg-amber-500 text-white shadow-sm hover:scale-105 transition">Nordeste ☀️</button>
-        <button onclick="filterRegion('Centro-Oeste')" class="text-xs font-bold px-3.5 py-1.5 rounded-full bg-sky-500 text-white shadow-sm hover:scale-105 transition">Centro-Oeste 🏛️</button>
-        <button onclick="filterRegion('Sudeste')" class="text-xs font-bold px-3.5 py-1.5 rounded-full bg-orange-500 text-white shadow-sm hover:scale-105 transition">Sudeste 🏙️</button>
-        <button onclick="filterRegion('Sul')" class="text-xs font-bold px-3.5 py-1.5 rounded-full bg-violet-500 text-white shadow-sm hover:scale-105 transition">Sul 🧉</button>
+      <div class="bg-white p-4 rounded-3xl shadow-sm border border-emerald-100 max-w-3xl mx-auto flex flex-wrap items-center justify-between gap-4">
+        
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-xs font-bold text-slate-500 mr-1">🎨 Tintas:</span>
+          
+          <button onclick="setCurrentColor('#10b981', this)" class="color-btn w-8 h-8 rounded-full bg-emerald-500 shadow transition transform hover:scale-110 color-btn-active" title="Verde (Norte)"></button>
+          <button onclick="setCurrentColor('#f59e0b', this)" class="color-btn w-8 h-8 rounded-full bg-amber-500 shadow transition transform hover:scale-110" title="Amarelo (Nordeste)"></button>
+          <button onclick="setCurrentColor('#0ea5e9', this)" class="color-btn w-8 h-8 rounded-full bg-sky-500 shadow transition transform hover:scale-110" title="Azul (Centro-Oeste)"></button>
+          <button onclick="setCurrentColor('#f97316', this)" class="color-btn w-8 h-8 rounded-full bg-orange-500 shadow transition transform hover:scale-110" title="Laranja (Sudeste)"></button>
+          <button onclick="setCurrentColor('#8b5cf6', this)" class="color-btn w-8 h-8 rounded-full bg-violet-500 shadow transition transform hover:scale-110" title="Roxo (Sul)"></button>
+          <button onclick="setCurrentColor('#ec4899', this)" class="color-btn w-8 h-8 rounded-full bg-pink-500 shadow transition transform hover:scale-110" title="Rosa"></button>
+          <button onclick="setCurrentColor('#ef4444', this)" class="color-btn w-8 h-8 rounded-full bg-red-500 shadow transition transform hover:scale-110" title="Vermelho"></button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="colorAllByRegion()" class="text-xs font-bold px-3.5 py-2 rounded-full bg-teal-600 hover:bg-teal-700 text-white shadow transition">
+            ✨ Cores Oficiais
+          </button>
+          <button onclick="clearAllColors()" class="text-xs font-bold px-3 py-2 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 shadow transition">
+            🧹 Limpar
+          </button>
+        </div>
+
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        <!-- Mapa Leaflet com os Estados Coloridos -->
         <div class="lg:col-span-7 bg-white rounded-3xl p-3 shadow-md border-2 border-emerald-100 flex flex-col items-center">
           <div id="map" class="shadow-inner"></div>
-          
-          <!-- Legenda de Cores das Regiões -->
-          <div class="mt-3 flex flex-wrap justify-center gap-3 text-[11px] font-bold text-slate-600">
-            <div class="flex items-center gap-1"><span class="w-3.5 h-3.5 rounded-full bg-emerald-500"></span> Norte (7 estados)</div>
-            <div class="flex items-center gap-1"><span class="w-3.5 h-3.5 rounded-full bg-amber-500"></span> Nordeste (9 estados)</div>
-            <div class="flex items-center gap-1"><span class="w-3.5 h-3.5 rounded-full bg-sky-500"></span> Centro-Oeste (3 estados + DF)</div>
-            <div class="flex items-center gap-1"><span class="w-3.5 h-3.5 rounded-full bg-orange-500"></span> Sudeste (4 estados)</div>
-            <div class="flex items-center gap-1"><span class="w-3.5 h-3.5 rounded-full bg-violet-500"></span> Sul (3 estados)</div>
-          </div>
+          <p class="text-[11px] text-slate-400 mt-2 font-semibold">Dica: Clica em qualquer estado para pintar com a cor escolhida!</p>
         </div>
 
-        <!-- Painel Lateral: Detalhes do Estado Selecionado -->
         <div class="lg:col-span-5 space-y-4">
           <div id="state-card" class="bg-white rounded-3xl p-6 shadow-md border-l-8 border-sky-500 transition-all">
             <div class="flex items-center justify-between mb-2">
@@ -146,26 +141,21 @@
               <p><b>👑 No Nível Federal:</b> Aqui no Distrito Federal trabalham o <b>Presidente da República</b>, os <b>Deputados Federais</b>, <b>Senadores</b> e os <b>Juízes do STF</b>, que cuidam de todo o país.</p>
               <p><b>🗺️ No Nível Distrital:</b> O Governador e os Deputados Distritais cuidam das escolas, polícia e hospitais de todo o DF.</p>
             </div>
-
-            <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500">
-              💡 <i>Dica: Clica em qualquer estado colorido no mapa para descobrir sua capital e seus governantes!</i>
-            </div>
           </div>
 
-          <!-- Resumo dos 3 Níveis -->
           <div class="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-3xl p-5 shadow-md">
             <h4 class="font-bold text-sm flex items-center gap-2">
               <span>🎯</span> Os 3 Níveis de Governo:
             </h4>
             <div class="mt-3 space-y-2 text-xs text-emerald-50">
               <div class="bg-white/10 p-2.5 rounded-xl">
-                <b>1. Governo Federal (País):</b> Presidente e Congresso Nacional em Brasília.
+                <b>1. Governo Federal:</b> Presidente e Congresso Nacional em Brasília.
               </div>
               <div class="bg-white/10 p-2.5 rounded-xl">
-                <b>2. Governo Estadual (Estado):</b> Governador e Deputados Estaduais.
+                <b>2. Governo Estadual:</b> Governador e Deputados Estaduais.
               </div>
               <div class="bg-white/10 p-2.5 rounded-xl">
-                <b>3. Governo Municipal (Cidade):</b> Prefeito e Vereadores.
+                <b>3. Governo Municipal:</b> Prefeito e Vereadores da sua cidade.
               </div>
             </div>
           </div>
@@ -174,9 +164,6 @@
       </div>
     </section>
 
-    <!-- ============================================== -->
-    <!-- ABA 2: OS 3 PODERES -->
-    <!-- ============================================== -->
     <section id="section-poderes" class="space-y-6 hidden">
       <div class="text-center max-w-2xl mx-auto">
         <span class="bg-teal-100 text-teal-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Equilíbrio da Democracia</span>
@@ -185,7 +172,6 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- Legislativo -->
         <div class="bg-white rounded-3xl p-6 shadow-md border-t-8 border-violet-500 flex flex-col justify-between">
           <div>
             <div class="w-14 h-14 bg-violet-100 rounded-2xl flex items-center justify-center text-3xl mb-4">📜</div>
@@ -203,7 +189,6 @@
           </div>
         </div>
 
-        <!-- Executivo -->
         <div class="bg-white rounded-3xl p-6 shadow-md border-t-8 border-orange-500 flex flex-col justify-between">
           <div>
             <div class="w-14 h-14 bg-orange-100 rounded-2xl flex items-center justify-center text-3xl mb-4">⚙️</div>
@@ -221,406 +206,9 @@
           </div>
         </div>
 
-        <!-- Judiciário -->
         <div class="bg-white rounded-3xl p-6 shadow-md border-t-8 border-rose-500 flex flex-col justify-between">
           <div>
             <div class="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center text-3xl mb-4">⚖️</div>
             <h3 class="text-xl font-bold text-rose-900">Poder Judiciário</h3>
             <p class="text-xs font-bold uppercase tracking-wider text-rose-600 mb-3">"Os Árbitros da Justiça"</p>
-            <p class="text-slate-600 text-sm leading-relaxed">
-              Garantem que todo mundo obedeça às regras e resolvem conflitos com base na Constituição.
-            </p>
-          </div>
-          <div class="mt-6 bg-rose-50 p-3.5 rounded-2xl text-xs text-rose-900 space-y-1">
-            <span class="font-bold block mb-1">Quem faz parte:</span>
-            <div>🧑‍⚖️ <b>Juízes de Direito</b></div>
-            <div>🏛️ <b>Tribunais de Justiça</b></div>
-            <div>⭐ <b>STF (Supremo Tribunal Federal)</b></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============================================== -->
-    <!-- ABA 3: SUPER QUIZ INTERATIVO -->
-    <!-- ============================================== -->
-    <section id="section-quiz" class="space-y-6 hidden">
-      <div class="max-w-2xl mx-auto bg-white rounded-3xl p-6 md:p-8 shadow-lg border-4 border-amber-300">
-        
-        <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
-          <div>
-            <span class="text-xs font-bold uppercase text-amber-600 tracking-wider">Desafio Cidadão</span>
-            <h2 class="text-2xl font-bold text-slate-800">Quem Faz o Quê? 🎯</h2>
-          </div>
-          <div class="text-right">
-            <span class="text-xs font-bold text-slate-400">Pontuação</span>
-            <div id="quiz-score" class="text-2xl font-black text-amber-500">0 pts</div>
-          </div>
-        </div>
-
-        <!-- Pergunta e Opções -->
-        <div id="quiz-container">
-          <div class="flex items-center gap-2 mb-3">
-            <span id="question-number" class="text-xs font-bold bg-amber-100 text-amber-800 px-3 py-1 rounded-full">Pergunta 1 de 5</span>
-          </div>
-          <h3 id="question-text" class="text-lg md:text-xl font-bold text-slate-800 mb-6">A carregar pergunta...</h3>
-
-          <div id="options-container" class="space-y-3"></div>
-
-          <!-- Feedback da Resposta -->
-          <div id="feedback-box" class="mt-6 p-4 rounded-2xl hidden">
-            <p id="feedback-text" class="text-sm font-semibold"></p>
-            <button onclick="nextQuestion()" id="btn-next" class="mt-3 px-5 py-2 bg-slate-800 text-white font-bold text-sm rounded-full shadow hover:bg-slate-700 transition">
-              Próxima Pergunta ➡️
-            </button>
-          </div>
-        </div>
-
-        <!-- Fim de Jogo -->
-        <div id="quiz-end" class="text-center py-8 space-y-4 hidden">
-          <div class="text-6xl animate-bounce">🏆</div>
-          <h3 class="text-2xl font-bold text-slate-800">Parabéns, Jovem Cidadão!</h3>
-          <p id="final-message" class="text-slate-600 text-sm">Completaste a tua missão com nota máxima!</p>
-          <button onclick="restartQuiz()" class="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-full shadow-md transition">
-            Jogar Novamente 🔄
-          </button>
-        </div>
-
-      </div>
-    </section>
-
-  </main>
-
-  <!-- Rodapé -->
-  <footer class="bg-slate-800 text-slate-300 py-6 px-4 text-center text-xs mt-auto">
-    <p>💡 Feito com carinho para ensinar Geografia e Cidadania para crianças do Brasil.</p>
-  </footer>
-
-  <!-- Lógica JavaScript com Polígonos Reais Coloridos por Região -->
-  <script>
-    // 1. Dados e Cores por Região
-    const regionColors = {
-      "Norte": "#10b981",        // Verde Esmeralda
-      "Nordeste": "#f59e0b",     // Âmbar / Dourado
-      "Centro-Oeste": "#0ea5e9", // Azul Celeste
-      "Sudeste": "#f97316",      // Laranja
-      "Sul": "#8b5cf6"           // Roxo / Violeta
-    };
-
-    const statesData = {
-      "AC": { name: "Acre", capital: "Rio Branco", region: "Norte" },
-      "AL": { name: "Alagoas", capital: "Maceió", region: "Nordeste" },
-      "AP": { name: "Amapá", capital: "Macapá", region: "Norte" },
-      "AM": { name: "Amazonas", capital: "Manaus", region: "Norte" },
-      "BA": { name: "Bahia", capital: "Salvador", region: "Nordeste" },
-      "CE": { name: "Ceará", capital: "Fortaleza", region: "Nordeste" },
-      "DF": { name: "Distrito Federal", capital: "Brasília (Capital Nacional)", region: "Centro-Oeste" },
-      "ES": { name: "Espírito Santo", capital: "Vitória", region: "Sudeste" },
-      "GO": { name: "Goiás", capital: "Goiânia", region: "Centro-Oeste" },
-      "MA": { name: "Maranhão", capital: "São Luís", region: "Nordeste" },
-      "MT": { name: "Mato Grosso", capital: "Cuiabá", region: "Centro-Oeste" },
-      "MS": { name: "Mato Grosso do Sul", capital: "Campo Grande", region: "Centro-Oeste" },
-      "MG": { name: "Minas Gerais", capital: "Belo Horizonte", region: "Sudeste" },
-      "PA": { name: "Pará", capital: "Belém", region: "Norte" },
-      "PB": { name: "Paraíba", capital: "João Pessoa", region: "Nordeste" },
-      "PR": { name: "Paraná", capital: "Curitiba", region: "Sul" },
-      "PE": { name: "Pernambuco", capital: "Recife", region: "Nordeste" },
-      "PI": { name: "Piauí", capital: "Teresina", region: "Nordeste" },
-      "RJ": { name: "Rio de Janeiro", capital: "Rio de Janeiro", region: "Sudeste" },
-      "RN": { name: "Rio Grande do Norte", capital: "Natal", region: "Nordeste" },
-      "RS": { name: "Rio Grande do Sul", capital: "Porto Alegre", region: "Sul" },
-      "RO": { name: "Rondônia", capital: "Porto Velho", region: "Norte" },
-      "RR": { name: "Roraima", capital: "Boa Vista", region: "Norte" },
-      "SC": { name: "Santa Catarina", capital: "Florianópolis", region: "Sul" },
-      "SP": { name: "São Paulo", capital: "São Paulo", region: "Sudeste" },
-      "SE": { name: "Sergipe", capital: "Aracaju", region: "Nordeste" },
-      "TO": { name: "Tocantins", capital: "Palmas", region: "Norte" }
-    };
-
-    const regionBorderColors = {
-      "Norte": "border-emerald-500",
-      "Nordeste": "border-amber-500",
-      "Centro-Oeste": "border-sky-500",
-      "Sudeste": "border-orange-500",
-      "Sul": "border-violet-500"
-    };
-
-    const regionBgTags = {
-      "Norte": "bg-emerald-100 text-emerald-800",
-      "Nordeste": "bg-amber-100 text-amber-800",
-      "Centro-Oeste": "bg-sky-100 text-sky-800",
-      "Sudeste": "bg-orange-100 text-orange-800",
-      "Sul": "bg-violet-100 text-violet-800"
-    };
-
-    let leafletMap;
-    let geojsonLayer;
-    let currentFilter = "TODAS";
-
-    // 2. Inicializar o Mapa com os Estados Coloridos por Região
-    async function initColorMap() {
-      // Criação do Mapa com visão centralizada no Brasil
-      leafletMap = L.map('map', {
-        center: [-14.2350, -51.9253],
-        zoom: 4,
-        minZoom: 3,
-        maxZoom: 7
-      });
-
-      // Camada de fundo suave (CartoDB Positron)
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '© OpenStreetMap, © CartoDB'
-      }).addTo(leafletMap);
-
-      // Pin animado de Brasília no centro
-      const dfIcon = L.divIcon({
-        className: 'custom-div-icon',
-        html: `<div class="df-marker" title="Brasília - Capital do Brasil">DF</div>`,
-        iconSize: [32, 32],
-        iconAnchor: [16, 16]
-      });
-      L.marker([-15.7975, -47.8919], { icon: dfIcon }).addTo(leafletMap)
-        .on('click', () => selectState('DF'));
-
-      // Carregar os polígonos reais dos 26 estados + DF
-      try {
-        const res = await fetch("https://raw.githubusercontent.com/codeforamerica/click_test/master/maps/geojson/brazil-states.geojson");
-        const geoData = await res.json();
-
-        geojsonLayer = L.geoJSON(geoData, {
-          style: function(feature) {
-            const uf = feature.properties.sigla || feature.id;
-            const state = statesData[uf];
-            const color = state ? regionColors[state.region] : "#94a3b8";
-            
-            return {
-              fillColor: color,
-              weight: 1.5,
-              opacity: 1,
-              color: '#ffffff',
-              fillOpacity: 0.8
-            };
-          },
-          onEachFeature: function(feature, layer) {
-            const uf = feature.properties.sigla || feature.id;
-            const state = statesData[uf];
-
-            if (state) {
-              layer.bindTooltip(`<b>${state.name} (${uf})</b><br>Região ${state.region}`, {
-                sticky: true,
-                className: 'font-bold text-xs rounded-xl shadow-md'
-              });
-            }
-
-            layer.on({
-              mouseover: function(e) {
-                const l = e.target;
-                l.setStyle({
-                  weight: 3,
-                  color: '#0f172a',
-                  fillOpacity: 0.95
-                });
-                l.bringToFront();
-              },
-              mouseout: function(e) {
-                geojsonLayer.resetStyle(e.target);
-                applyFilterStyles();
-              },
-              click: function(e) {
-                selectState(uf);
-                leafletMap.fitBounds(e.target.getBounds(), { maxZoom: 6 });
-              }
-            });
-          }
-        }).addTo(leafletMap);
-
-      } catch (e) {
-        console.error("Erro ao carregar GeoJSON dos estados:", e);
-      }
-    }
-
-    // 3. Atualizar Painel de Informações do Estado
-    function selectState(uf) {
-      const state = statesData[uf];
-      if (!state) return;
-
-      const card = document.getElementById("state-card");
-      card.className = `bg-white rounded-3xl p-6 shadow-md border-l-8 ${regionBorderColors[state.region]} transition-all`;
-      
-      const badge = document.getElementById("state-badge-region");
-      badge.className = `text-xs uppercase font-bold tracking-wider px-3 py-1 rounded-full ${regionBgTags[state.region]}`;
-      badge.innerText = `Região ${state.region}`;
-
-      document.getElementById("state-uf-badge").innerText = uf;
-      document.getElementById("state-title").innerText = state.name;
-      document.getElementById("state-capital").innerText = `Capital: ${state.capital}`;
-
-      const govInfo = document.getElementById("state-gov-info");
-      if (uf === "DF") {
-        govInfo.innerHTML = `
-          <p><b>👑 No Nível Federal:</b> Aqui em Brasília ficam sediados o <b>Presidente da República</b>, o <b>Congresso Nacional</b> (Senadores e Deputados Federais) e os <b>Juízes do STF</b>, que cuidam de todo o Brasil.</p>
-          <p><b>🗺️ No Nível Distrital:</b> O Governador e os Deputados Distritais cuidam das escolas, polícia e saúde de todo o DF.</p>
-        `;
-      } else {
-        govInfo.innerHTML = `
-          <p><b>🗺️ No Nível Estadual (${state.name}):</b> O <b>Governador(a)</b> e os <b>Deputados Estaduais</b> administram as polícias estaduais, hospitais de referência e rodovias.</p>
-          <p><b>🏙️ No Nível Municipal:</b> Cada cidade de ${state.name} tem o seu próprio <b>Prefeito(a)</b> e <b>Vereadores</b> cuidando das praças, escolas municipais e postinhos locais.</p>
-        `;
-      }
-    }
-
-    // 4. Filtrar Cores por Região
-    function filterRegion(reg) {
-      currentFilter = reg;
-      applyFilterStyles();
-
-      if (reg === "TODAS") {
-        leafletMap.flyTo([-14.2350, -51.9253], 4);
-      }
-    }
-
-    function applyFilterStyles() {
-      if (!geojsonLayer) return;
-      
-      geojsonLayer.eachLayer(layer => {
-        const uf = layer.feature.properties.sigla || layer.feature.id;
-        const state = statesData[uf];
-        if (!state) return;
-
-        if (currentFilter === "TODAS" || state.region === currentFilter) {
-          layer.setStyle({
-            fillColor: regionColors[state.region],
-            fillOpacity: 0.85,
-            opacity: 1
-          });
-        } else {
-          layer.setStyle({
-            fillColor: "#cbd5e1",
-            fillOpacity: 0.2,
-            opacity: 0.3
-          });
-        }
-      });
-    }
-
-    // 5. Navegação das Abas
-    function setTab(tab) {
-      ['mapa', 'poderes', 'quiz'].forEach(t => {
-        document.getElementById(`section-${t}`).classList.add('hidden');
-        const btn = document.getElementById(`btn-${t}`);
-        btn.className = 'tab-btn px-4 py-2 rounded-full font-bold text-sm transition bg-emerald-700/50 hover:bg-emerald-700 text-white';
-      });
-
-      document.getElementById(`section-${tab}`).classList.remove('hidden');
-      const activeBtn = document.getElementById(`btn-${tab}`);
-      activeBtn.className = 'tab-btn px-4 py-2 rounded-full font-bold text-sm transition shadow-sm bg-white text-emerald-700';
-
-      if (tab === 'mapa' && leafletMap) {
-        setTimeout(() => leafletMap.invalidateSize(), 200);
-      }
-    }
-
-    // 6. Super Quiz
-    const quizQuestions = [
-      {
-        question: "Quem é o responsável por asfaltar a rua e cuidar da pracinha do teu bairro?",
-        options: ["O(A) Prefeito(a) da Cidade", "O Presidente do País", "O Diretor da Escola", "O Juiz do Tribunal"],
-        correct: 0,
-        explanation: "Muito bem! A Prefeitura (Nível Municipal) cuida das praças, da limpeza da rua e dos postos de saúde."
-      },
-      {
-        question: "Qual é a principal função do Poder Legislativo (Vereadores e Deputados)?",
-        options: ["Julgar os crimes no tribunal", "Construir pontes e estradas", "Criar, debater e aprovar as leis", "Comandar as viaturas da polícia"],
-        correct: 2,
-        explanation: "Excelente! O Poder Legislativo é o grupo responsável por escrever e votar as leis do país."
-      },
-      {
-        question: "Onde fica a capital federal do Brasil, onde o Presidente trabalha?",
-        options: ["No Rio de Janeiro (Sudeste)", "Em Brasília / DF (Centro-Oeste)", "Em Manaus (Norte)", "Em Salvador (Nordeste)"],
-        correct: 1,
-        explanation: "Certíssimo! Brasília fica no Distrito Federal, no coração da Região Centro-Oeste."
-      },
-      {
-        question: "O que faz o Poder Judiciário (Juízes e Tribunais)?",
-        options: ["Cria novos impostos", "Garante que todos cumpram a lei e a Constituição", "Pinta as salas de aula", "Escolhe o novo Prefeito"],
-        correct: 1,
-        explanation: "Isso mesmo! O Judiciário funciona como o árbitro: garante que todos respeitem as regras e a Constituição."
-      },
-      {
-        question: "Quantos Estados tem o Brasil além do Distrito Federal?",
-        options: ["10 Estados", "26 Estados", "50 Estados", "15 Estados"],
-        correct: 1,
-        explanation: "Perfeito! O Brasil é formado pela união de 26 Estados e mais 1 Distrito Federal."
-      }
-    ];
-
-    let currentQ = 0;
-    let score = 0;
-
-    function renderQuestion() {
-      const q = quizQuestions[currentQ];
-      document.getElementById('question-number').innerText = `Pergunta ${currentQ + 1} de ${quizQuestions.length}`;
-      document.getElementById('question-text').innerText = q.question;
-
-      const optsContainer = document.getElementById('options-container');
-      optsContainer.innerHTML = '';
-      document.getElementById('feedback-box').classList.add('hidden');
-
-      q.options.forEach((opt, idx) => {
-        const btn = document.createElement('button');
-        btn.className = "w-full text-left p-4 rounded-2xl border-2 border-slate-200 hover:border-amber-400 hover:bg-amber-50 font-bold text-slate-700 transition flex items-center justify-between";
-        btn.innerHTML = `<span>${opt}</span><span class="text-slate-300">👉</span>`;
-        btn.onclick = () => checkAnswer(idx);
-        optsContainer.appendChild(btn);
-      });
-    }
-
-    function checkAnswer(chosenIdx) {
-      const q = quizQuestions[currentQ];
-      const feedbackBox = document.getElementById('feedback-box');
-      const feedbackText = document.getElementById('feedback-text');
-      const allBtns = document.getElementById('options-container').querySelectorAll('button');
-
-      allBtns.forEach(btn => btn.disabled = true);
-
-      if (chosenIdx === q.correct) {
-        score += 20;
-        document.getElementById('quiz-score').innerText = `${score} pts`;
-        feedbackBox.className = "mt-6 p-4 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-900";
-        feedbackText.innerHTML = `✨ <b>Correto!</b> ${q.explanation}`;
-      } else {
-        feedbackBox.className = "mt-6 p-4 rounded-2xl bg-rose-100 border border-rose-300 text-rose-900";
-        feedbackText.innerHTML = `💡 <b>Quase lá!</b> ${q.explanation}`;
-      }
-      feedbackBox.classList.remove('hidden');
-    }
-
-    function nextQuestion() {
-      currentQ++;
-      if (currentQ < quizQuestions.length) {
-        renderQuestion();
-      } else {
-        document.getElementById('quiz-container').classList.add('hidden');
-        document.getElementById('quiz-end').classList.remove('hidden');
-        document.getElementById('final-message').innerText = `Conseguiste ${score} de 100 pontos! Parabéns pelo aprendizado.`;
-      }
-    }
-
-    function restartQuiz() {
-      currentQ = 0;
-      score = 0;
-      document.getElementById('quiz-score').innerText = "0 pts";
-      document.getElementById('quiz-container').classList.remove('hidden');
-      document.getElementById('quiz-end').classList.add('hidden');
-      renderQuestion();
-    }
-
-    // Inicialização ao carregar a página
-    window.addEventListener('DOMContentLoaded', () => {
-      initColorMap();
-      selectState('DF');
-      renderQuestion();
-    });
-  </script>
-</body>
-</html>
+            <p class

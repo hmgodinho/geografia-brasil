@@ -3,22 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Exploradores do Brasil: Como Funciona o Nosso País!</title>
+  <title>Exploradores do Brasil: Geografia e Política para Crianças!</title>
   
   <!-- Favicon da bandeirinha do Brasil (Sem erro 404) -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🇧🇷</text></svg>">
 
-  <!-- Tailwind CSS Compilado Oficial (Zero avisos no console) -->
+  <!-- Tailwind CSS Compilado Oficial (Sem avisos de desenvolvimento) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" />
-
-  <!-- D3.js e TopoJSON para renderização cartográfica exata do IBGE -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 
   <!-- Fontes Google Lúdicas -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+
+  <!-- D3: desenha o mapa real dos 26 estados + DF a partir de GeoJSON -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 
   <style>
     body {
@@ -29,53 +28,66 @@
       font-family: 'Fredoka', cursive;
     }
     
-    /* Estilos Cartográficos Oficiais */
-    .real-state {
-      cursor: pointer;
+    /* Mapa real em SVG: cada UF é um polígono clicável */
+    #brazil-map {
+      width: 100%;
+      height: auto;
+      display: block;
+      overflow: visible;
+    }
+
+    .state-shape {
       stroke: #ffffff;
-      stroke-width: 1px;
-      transition: fill 0.2s ease, stroke-width 0.2s ease, filter 0.2s ease;
-      paint-order: stroke fill;
+      stroke-width: 0.8;
+      vector-effect: non-scaling-stroke;
+      cursor: pointer;
+      transition: filter 0.18s ease, opacity 0.18s ease, stroke-width 0.18s ease;
     }
-    .real-state:hover {
-      filter: brightness(1.2) drop-shadow(0 2px 5px rgba(0,0,0,0.3));
+
+    .state-shape:hover {
+      filter: brightness(0.92) drop-shadow(0 3px 3px rgba(15, 23, 42, 0.28));
       stroke: #0f172a;
-      stroke-width: 2px;
+      stroke-width: 1.6;
     }
-    .real-state-selected {
+
+    .state-shape-active {
       stroke: #0f172a !important;
-      stroke-width: 2.5px !important;
-      filter: brightness(1.15) drop-shadow(0 4px 8px rgba(0,0,0,0.4)) !important;
+      stroke-width: 2.5 !important;
+      filter: brightness(0.92) drop-shadow(0 4px 5px rgba(15, 23, 42, 0.35));
     }
-    .state-sigla {
-      font-family: 'Fredoka', cursive;
-      font-size: 10px;
-      font-weight: bold;
-      fill: #ffffff;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.8), -1px -1px 2px rgba(0,0,0,0.8);
+
+    .state-label {
       pointer-events: none;
+      user-select: none;
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 700;
+      font-size: 11px;
+      fill: #ffffff;
+      stroke: rgba(15, 23, 42, 0.55);
+      stroke-width: 2.5px;
+      paint-order: stroke;
       text-anchor: middle;
       dominant-baseline: central;
-      user-select: none;
     }
-    .color-btn-active {
-      outline: 4px solid #0f172a;
-      transform: scale(1.18);
+
+    .map-loading {
+      min-height: 500px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      font-weight: 700;
+      text-align: center;
+      padding: 2rem;
     }
-    #map-tooltip {
-      position: absolute;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.15s ease;
-      z-index: 50;
-      transform: translate(-50%, -125%);
+
+    @media (max-width: 640px) {
+      .state-label { font-size: 9px; }
+      .map-loading { min-height: 380px; }
     }
   </style>
 </head>
 <body class="text-slate-800 min-h-screen flex flex-col antialiased selection:bg-emerald-200">
-
-  <!-- Tooltip Flutuante -->
-  <div id="map-tooltip" class="bg-slate-900 text-white text-xs font-bold py-1.5 px-3 rounded-xl shadow-xl border border-slate-700 whitespace-nowrap"></div>
 
   <!-- Cabeçalho Principal -->
   <header class="bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white shadow-lg py-5 px-4 sticky top-0 z-40">
@@ -91,7 +103,7 @@
       <!-- Navegação por Abas -->
       <nav class="flex flex-wrap justify-center gap-2">
         <button onclick="setTab('mapa')" id="btn-mapa" class="tab-btn px-4 py-2 rounded-full font-bold text-sm transition shadow-sm bg-white text-emerald-700">
-          🗺️ Pinte o Brasil Real
+          🗺️ Mapa dos Estados
         </button>
         <button onclick="setTab('poderes')" id="btn-poderes" class="tab-btn px-4 py-2 rounded-full font-bold text-sm transition bg-emerald-700 bg-opacity-50 hover:bg-opacity-100 text-white">
           ⚡ Os 3 Poderes
@@ -107,92 +119,83 @@
   <main class="max-w-6xl mx-auto w-full flex-grow p-4 md:p-6">
 
     <!-- ============================================== -->
-    <!-- ABA 1: MAPA GEOGRÁFICO REAL E PINTURA -->
+    <!-- ABA 1: MAPA FIXO REAL COM ESTADOS COLORIDOS -->
     <!-- ============================================== -->
     <section id="section-mapa" class="space-y-6">
       
       <div class="text-center max-w-2xl mx-auto">
-        <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Geografia Real do Brasil</span>
-        <h2 class="text-2xl md:text-3xl font-bold text-emerald-900 mt-2">Escolha uma Cor e Pinte o Mapa Real!</h2>
-        <p class="text-slate-600 text-sm mt-1">Clica numa tinta abaixo e depois clica em qualquer estado para colori-lo com contornos geográficos reais.</p>
-      </div>
-
-      <!-- Barra de Tintas e Ações -->
-      <div class="bg-white p-4 rounded-3xl shadow-sm border border-emerald-100 max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-4">
-        
-        <!-- Tintas da Paleta -->
-        <div class="flex items-center gap-2.5 flex-wrap">
-          <span class="text-xs font-bold text-slate-500 mr-1">🎨 Tintas:</span>
-          
-          <button onclick="setCurrentColor('#10b981', this)" class="color-btn w-8 h-8 rounded-full bg-emerald-500 shadow transition transform hover:scale-110 color-btn-active" title="Verde (Norte)"></button>
-          <button onclick="setCurrentColor('#f59e0b', this)" class="color-btn w-8 h-8 rounded-full bg-yellow-500 shadow transition transform hover:scale-110" title="Amarelo (Nordeste)"></button>
-          <button onclick="setCurrentColor('#0ea5e9', this)" class="color-btn w-8 h-8 rounded-full bg-blue-400 shadow transition transform hover:scale-110" title="Azul (Centro-Oeste)"></button>
-          <button onclick="setCurrentColor('#f97316', this)" class="color-btn w-8 h-8 rounded-full bg-yellow-600 shadow transition transform hover:scale-110" title="Laranja (Sudeste)"></button>
-          <button onclick="setCurrentColor('#8b5cf6', this)" class="color-btn w-8 h-8 rounded-full bg-purple-500 shadow transition transform hover:scale-110" title="Roxo (Sul)"></button>
-          <button onclick="setCurrentColor('#ec4899', this)" class="color-btn w-8 h-8 rounded-full bg-pink-500 shadow transition transform hover:scale-110" title="Rosa"></button>
-          <button onclick="setCurrentColor('#ef4444', this)" class="color-btn w-8 h-8 rounded-full bg-red-500 shadow transition transform hover:scale-110" title="Vermelho"></button>
-        </div>
-
-        <!-- Botões de Ação -->
-        <div class="flex items-center gap-2">
-          <button onclick="colorAllByRegion()" class="text-xs font-bold px-3.5 py-2 rounded-full bg-teal-600 hover:bg-teal-700 text-white shadow transition">
-            ✨ Cores Oficiais
-          </button>
-          <button onclick="clearAllColors()" class="text-xs font-bold px-3 py-2 rounded-full bg-gray-200 hover:bg-gray-300 text-slate-700 shadow transition">
-            🧹 Limpar
-          </button>
-        </div>
-
+        <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Geografia Interativa</span>
+        <h2 class="text-2xl md:text-3xl font-bold text-emerald-900 mt-2">Clica no teu Estado para Explorar!</h2>
+        <p class="text-slate-600 text-sm mt-1">Os estados estão coloridos de acordo com a sua região. Clica em qualquer sigla no mapa para ver quem cuida de cada lugar!</p>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        <!-- Contêiner do Mapa Real com D3/TopoJSON -->
-        <div class="lg:col-span-7 bg-white rounded-3xl p-4 md:p-6 shadow-md border-2 border-emerald-100 flex flex-col items-center relative min-h-[500px]">
+        <!-- Painel Esquerdo: Imagem Fixa Oficial com Pins Clicáveis -->
+        <div class="lg:col-span-7 bg-white rounded-3xl p-4 md:p-6 shadow-md border-2 border-emerald-100 flex flex-col items-center">
           
-          <div id="map-loading" class="absolute inset-0 bg-white/90 rounded-3xl flex flex-col items-center justify-center gap-2 z-10">
-            <div class="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-            <span class="text-xs font-bold text-emerald-800">Carregando mapa oficial do Brasil...</span>
+          <!-- Contêiner do mapa real -->
+          <div id="map-container" class="relative w-full max-w-[560px] flex items-center justify-center bg-sky-50 rounded-2xl p-2 border border-sky-100 shadow-inner overflow-hidden">
+            <div id="map-loading" class="map-loading">
+              🗺️ A carregar o mapa real dos estados...
+            </div>
+            <svg id="brazil-map"
+                 viewBox="0 0 1000 1000"
+                 role="img"
+                 aria-label="Mapa interativo do Brasil dividido em estados"
+                 class="hidden">
+              <g id="states-layer"></g>
+              <g id="labels-layer"></g>
+            </svg>
           </div>
 
-          <div class="w-full flex justify-center">
-            <svg id="real-brazil-svg" viewBox="0 0 580 580" class="w-full max-w-[530px] h-auto drop-shadow-sm select-none"></svg>
+          <!-- Legenda Oficial das Regiões -->
+          <div class="mt-4 flex flex-wrap justify-center gap-3 text-xs font-bold text-slate-700">
+            <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded-full bg-emerald-600"></span> Norte</div>
+            <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded-full bg-yellow-500"></span> Nordeste</div>
+            <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded-full bg-blue-500"></span> Centro-Oeste</div>
+            <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded-full bg-yellow-600"></span> Sudeste</div>
+            <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded-full bg-purple-600"></span> Sul</div>
+            <div class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded-full bg-red-600"></span> DF (Brasília)</div>
           </div>
-
-          <p class="text-[11px] text-slate-400 mt-3 font-semibold text-center">💡 Dica: Clica na cor desejada e depois no estado para pintar seus limites reais!</p>
         </div>
 
-        <!-- Painel Lateral: Detalhes do Estado Selecionado -->
+        <!-- Painel Direito: Quadro de Informações do Estado Clicado -->
         <div class="lg:col-span-5 space-y-4">
           <div id="state-card" class="bg-white rounded-3xl p-6 shadow-md border-l-8 border-blue-500 transition-all">
+            
             <div class="flex items-center justify-between mb-2">
               <span id="state-badge-region" class="text-xs uppercase font-bold tracking-wider px-3 py-1 rounded-full bg-blue-100 text-blue-800">Região Centro-Oeste</span>
-              <span id="state-uf-badge" class="text-sm font-black bg-slate-800 text-white px-2.5 py-0.5 rounded-lg">DF</span>
+              <span id="state-uf-badge" class="text-sm font-black bg-slate-800 text-white px-3 py-0.5 rounded-xl">DF</span>
             </div>
             
-            <h3 id="state-title" class="text-2xl font-bold text-slate-800">Distrito Federal (Brasília)</h3>
-            <p id="state-capital" class="text-xs font-bold text-slate-500 mt-0.5">Capital do Brasil: Brasília 🇧🇷</p>
+            <h3 id="state-title" class="text-2xl font-bold text-slate-800">Distrito Federal</h3>
+            <p id="state-capital" class="text-xs font-bold text-slate-500 mt-0.5">Capital: Brasília (Capital Nacional) 🇧🇷</p>
 
             <div id="state-gov-info" class="mt-4 space-y-3 text-xs leading-relaxed text-slate-700 bg-gray-50 p-4 rounded-2xl border border-gray-100">
-              <p><b>👑 No Nível Federal:</b> Aqui no Distrito Federal trabalham o <b>Presidente da República</b>, os <b>Deputados Federais</b>, <b>Senadores</b> e os <b>Juízes do STF</b>, que cuidam de todo o Brasil.</p>
-              <p><b>🗺️ No Nível Distrital:</b> O Governador e os Deputados Distritais cuidam das escolas, polícia e hospitais de todo o DF.</p>
+              <p><b>👑 No Nível Federal:</b> Aqui em Brasília trabalham o <b>Presidente da República</b>, os <b>Deputados Federais</b>, <b>Senadores</b> e os <b>Juízes do STF</b>, que cuidam de todo o Brasil.</p>
+              <p><b>🗺️ No Nível Distrital:</b> O Governador e os Deputados Distritais cuidam das escolas, polícia e saúde de todo o DF.</p>
+            </div>
+
+            <div id="state-curiosity" class="mt-3 text-xs text-amber-900 bg-amber-50 p-3 rounded-xl border border-amber-200">
+              💡 <b>Curiosidade:</b> Brasília foi toda planejada no formato de um avião!
             </div>
           </div>
 
-          <!-- Resumo dos 3 Níveis -->
+          <!-- Card de Resumo Didático -->
           <div class="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-3xl p-5 shadow-md">
             <h4 class="font-bold text-sm flex items-center gap-2">
               <span>🎯</span> Os 3 Níveis de Governo:
             </h4>
             <div class="mt-3 space-y-2 text-xs text-emerald-50">
               <div class="bg-white bg-opacity-10 p-2.5 rounded-xl">
-                <b>1. Governo Federal:</b> Presidente e Congresso Nacional em Brasília.
+                <b>1. Governo Federal:</b> O país inteiro (Presidente e Congresso em Brasília).
               </div>
               <div class="bg-white bg-opacity-10 p-2.5 rounded-xl">
-                <b>2. Governo Estadual:</b> Governador e Deputados Estaduais.
+                <b>2. Governo Estadual:</b> Cada estado (Governador e Deputados Estaduais).
               </div>
               <div class="bg-white bg-opacity-10 p-2.5 rounded-xl">
-                <b>3. Governo Municipal:</b> Prefeito e Vereadores da sua cidade.
+                <b>3. Governo Municipal:</b> A sua cidade (Prefeito e Vereadores).
               </div>
             </div>
           </div>
@@ -323,45 +326,37 @@
     <p>💡 Feito com carinho para ensinar Geografia e Cidadania para crianças do Brasil.</p>
   </footer>
 
-  <!-- Lógica JavaScript do Mapa Real Oficial -->
+  <!-- Lógica JavaScript Rápida e Segura -->
   <script>
-    // 1. Dados dos 26 Estados + DF
-    const regionColors = {
-      "Norte": "#10b981",        // Verde
-      "Nordeste": "#f59e0b",     // Amarelo
-      "Centro-Oeste": "#0ea5e9", // Azul
-      "Sudeste": "#f97316",      // Laranja
-      "Sul": "#8b5cf6"           // Roxo
-    };
-
+    // 1. Dados Completos dos 26 Estados + DF
     const statesData = {
-      "AC": { name: "Acre", capital: "Rio Branco", region: "Norte" },
-      "AL": { name: "Alagoas", capital: "Maceió", region: "Nordeste" },
-      "AP": { name: "Amapá", capital: "Macapá", region: "Norte" },
-      "AM": { name: "Amazonas", capital: "Manaus", region: "Norte" },
-      "BA": { name: "Bahia", capital: "Salvador", region: "Nordeste" },
-      "CE": { name: "Ceará", capital: "Fortaleza", region: "Nordeste" },
-      "DF": { name: "Distrito Federal", capital: "Brasília (Capital Nacional)", region: "Centro-Oeste" },
-      "ES": { name: "Espírito Santo", capital: "Vitória", region: "Sudeste" },
-      "GO": { name: "Goiás", capital: "Goiânia", region: "Centro-Oeste" },
-      "MA": { name: "Maranhão", capital: "São Luís", region: "Nordeste" },
-      "MT": { name: "Mato Grosso", capital: "Cuiabá", region: "Centro-Oeste" },
-      "MS": { name: "Mato Grosso do Sul", capital: "Campo Grande", region: "Centro-Oeste" },
-      "MG": { name: "Minas Gerais", capital: "Belo Horizonte", region: "Sudeste" },
-      "PA": { name: "Pará", capital: "Belém", region: "Norte" },
-      "PB": { name: "Paraíba", capital: "João Pessoa", region: "Nordeste" },
-      "PR": { name: "Paraná", capital: "Curitiba", region: "Sul" },
-      "PE": { name: "Pernambuco", capital: "Recife", region: "Nordeste" },
-      "PI": { name: "Piauí", capital: "Teresina", region: "Nordeste" },
-      "RJ": { name: "Rio de Janeiro", capital: "Rio de Janeiro", region: "Sudeste" },
-      "RN": { name: "Rio Grande do Norte", capital: "Natal", region: "Nordeste" },
-      "RS": { name: "Rio Grande do Sul", capital: "Porto Alegre", region: "Sul" },
-      "RO": { name: "Rondônia", capital: "Porto Velho", region: "Norte" },
-      "RR": { name: "Roraima", capital: "Boa Vista", region: "Norte" },
-      "SC": { name: "Santa Catarina", capital: "Florianópolis", region: "Sul" },
-      "SP": { name: "São Paulo", capital: "São Paulo", region: "Sudeste" },
-      "SE": { name: "Sergipe", capital: "Aracaju", region: "Nordeste" },
-      "TO": { name: "Tocantins", capital: "Palmas", region: "Norte" }
+      "AC": { name: "Acre", capital: "Rio Branco", region: "Norte", curiosity: "Fica no extremo oeste e tem fuso horário com 2 horas a menos que Brasília!" },
+      "AL": { name: "Alagoas", capital: "Maceió", region: "Nordeste", curiosity: "Famoso pelas lagoas e praias de águas verdes e mornas." },
+      "AP": { name: "Amapá", capital: "Macapá", region: "Norte", curiosity: "A Linha do Equador passa bem no meio da sua capital Macapá!" },
+      "AM": { name: "Amazonas", capital: "Manaus", region: "Norte", curiosity: "É o maior estado em território do Brasil e abriga a maior floresta tropical do mundo." },
+      "BA": { name: "Bahia", capital: "Salvador", region: "Nordeste", curiosity: "Salvador foi a primeiríssima capital de todo o Brasil!" },
+      "CE": { name: "Ceará", capital: "Fortaleza", region: "Nordeste", curiosity: "Conhecido pela 'Terra da Luz' e pelas praias com dunas incríveis." },
+      "DF": { name: "Distrito Federal", capital: "Brasília (Capital Nacional)", region: "Centro-Oeste", curiosity: "Brasília foi toda planejada em formato de avião!" },
+      "ES": { name: "Espírito Santo", capital: "Vitória", region: "Sudeste", curiosity: "A famosa Moqueca Capixaba é um dos pratos mais tradicionais do Brasil." },
+      "GO": { name: "Goiás", capital: "Goiânia", region: "Centro-Oeste", curiosity: "Coração do sertanejo e terra do Parque Nacional da Chapada dos Veadeiros." },
+      "MA": { name: "Maranhão", capital: "São Luís", region: "Nordeste", curiosity: "Abriga os Lençóis Maranhenses, com dunas brancas e lagoas azuis." },
+      "MT": { name: "Mato Grosso", capital: "Cuiabá", region: "Centro-Oeste", curiosity: "Tem 3 biomas: Amazônia, Cerrado e a maior planície alagável do mundo (o Pantanal)." },
+      "MS": { name: "Mato Grosso do Sul", capital: "Campo Grande", region: "Centro-Oeste", curiosity: "A cidade de Bonito tem rios de águas cristalinas repletos de peixes." },
+      "MG": { name: "Minas Gerais", capital: "Belo Horizonte", region: "Sudeste", curiosity: "Famoso pelo queijo minas, pão de queijo e montanhas históricas." },
+      "PA": { name: "Pará", capital: "Belém", region: "Norte", curiosity: "Terra do açaí verdadeiro e do Círio de Nazaré." },
+      "PB": { name: "Paraíba", capital: "João Pessoa", region: "Nordeste", curiosity: "Ponta do Seixas é o ponto mais oriental das Américas: onde o sol nasce primeiro!" },
+      "PR": { name: "Paraná", capital: "Curitiba", region: "Sul", curiosity: "Abriga as impressionantes Cataratas do Iguaçu, uma das maravilhas do mundo." },
+      "PE": { name: "Pernambuco", capital: "Recife", region: "Nordeste", curiosity: "Terra do frevo, do maracatu e do arquipélago de Fernando de Noronha." },
+      "PI": { name: "Piauí", capital: "Teresina", region: "Nordeste", curiosity: "O Parque Nacional da Serra da Capivara tem pinturas rupestres antiquíssimas." },
+      "RJ": { name: "Rio de Janeiro", capital: "Rio de Janeiro", region: "Sudeste", curiosity: "O Cristo Redentor e o Pão de Açúcar recebem turistas de todo o planeta." },
+      "RN": { name: "Rio Grande do Norte", capital: "Natal", region: "Nordeste", curiosity: "Tem o Maior Cajueiro do Mundo, que parece uma floresta inteira!" },
+      "RS": { name: "Rio Grande do Sul", capital: "Porto Alegre", region: "Sul", curiosity: "Terra do chimarrão, das tradições gaúchas e da Serra Gaúcha." },
+      "RO": { name: "Rondônia", capital: "Porto Velho", region: "Norte", curiosity: "Tem a famosa ferrovia histórica Estrada de Ferro Madeira-Mamoré." },
+      "RR": { name: "Roraima", capital: "Boa Vista", region: "Norte", curiosity: "O Monte Roraima serviu de inspiração para o filme 'Up - Altas Aventuras'!" },
+      "SC": { name: "Santa Catarina", capital: "Florianópolis", region: "Sul", curiosity: "Famoso pelas praias e pela serra onde pode nevar no inverno!" },
+      "SP": { name: "São Paulo", capital: "São Paulo", region: "Sudeste", curiosity: "É o estado mais populoso do país e o maior polo econômico da América Latina." },
+      "SE": { name: "Sergipe", capital: "Aracaju", region: "Nordeste", curiosity: "É o menor estado em área de todo o Brasil!" },
+      "TO": { name: "Tocantins", capital: "Palmas", region: "Norte", curiosity: "É o estado mais jovem do Brasil (criado em 1988) e tem o paraíso do Jalapão." }
     };
 
     const regionBorderColors = {
@@ -380,141 +375,105 @@
       "Sul": "bg-purple-100 text-purple-800"
     };
 
-    let selectedPaintColor = "#10b981";
+    // 2. Mapa real e quadro lateral
+    const regionColors = {
+      "Norte": "#10b981",
+      "Nordeste": "#f59e0b",
+      "Centro-Oeste": "#3b82f6",
+      "Sudeste": "#d97706",
+      "Sul": "#9333ea"
+    };
 
-    // 2. Renderização dos Polígonos Geográficos Oficiais com D3 & TopoJSON
-    async function loadRealBrazilMap() {
-      const svg = d3.select("#real-brazil-svg");
-      const width = 580, height = 580;
-      const loading = document.getElementById("map-loading");
+    // GeoJSON dos limites estaduais. O arquivo é derivado das Malhas Territoriais do IBGE.
+    const BRAZIL_STATES_GEOJSON =
+      "https://cdn.jsdelivr.net/gh/henriquemalvar/br-geojson@main/dist/estados.geojson";
 
-      // Projeção Mercator perfeitamente calibrada para a extensão territorial do Brasil
-      const projection = d3.geoMercator()
-        .scale(700)
-        .center([-52, -15])
-        .translate([width / 2 + 10, height / 2 + 10]);
+    function getFeatureUF(feature) {
+      const p = feature.properties || {};
+      return p.sigla || p.SIGLA || p.uf || p.UF || feature.id;
+    }
 
-      const pathGenerator = d3.geoPath().projection(projection);
+    function renderBrazilMap(geojson) {
+      const svg = d3.select("#brazil-map");
+      const statesLayer = d3.select("#states-layer");
+      const labelsLayer = d3.select("#labels-layer");
 
-      // URLs com fallback aberto (CORS Seguro)
-      const topoUrls = [
-        "https://gist.githubusercontent.com/ruliana/1ccaaab05ea113b0dff3b22be3b4d637/raw/196c0332d38cb935cfca227d28f7cecfa70b412e/br-states.json",
-        "https://cdn.jsdelivr.net/gh/codeforamerica/click_test@master/maps/geojson/brazil-states.geojson"
-      ];
+      const features = geojson.features.filter(f => statesData[getFeatureUF(f)]);
 
-      let dataLoaded = false;
+      // A projeção é calculada automaticamente para caber todo o território no SVG.
+      const projection = d3.geoMercator().fitExtent(
+        [[25, 25], [975, 975]],
+        { type: "FeatureCollection", features }
+      );
+      const path = d3.geoPath(projection);
 
-      for (let url of topoUrls) {
-        try {
-          const res = await fetch(url);
-          if (!res.ok) continue;
-          const topology = await res.json();
-          
-          let features;
-          if (topology.type === "Topology") {
-            features = topojson.feature(topology, topology.objects.estados).features;
-          } else if (topology.features) {
-            features = topology.features;
+      statesLayer.selectAll("*").remove();
+      labelsLayer.selectAll("*").remove();
+
+      statesLayer.selectAll("path")
+        .data(features)
+        .join("path")
+        .attr("class", "state-shape")
+        .attr("d", path)
+        .attr("fill", d => regionColors[statesData[getFeatureUF(d)].region])
+        .attr("data-uf", d => getFeatureUF(d))
+        .attr("tabindex", 0)
+        .attr("role", "button")
+        .attr("aria-label", d => `${statesData[getFeatureUF(d)].name} (${getFeatureUF(d)})`)
+        .on("click", (_, d) => selectState(getFeatureUF(d)))
+        .on("keydown", (event, d) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            selectState(getFeatureUF(d));
           }
+        });
 
-          if (features && features.length > 0) {
-            // Desenha cada estado com os limites geográficos oficiais
-            const g = svg.append("g");
+      // Siglas são posicionadas dentro dos próprios estados, em vez de pins sobre uma imagem.
+      labelsLayer.selectAll("text")
+        .data(features)
+        .join("text")
+        .attr("class", "state-label")
+        .attr("x", d => path.centroid(d)[0])
+        .attr("y", d => path.centroid(d)[1])
+        .text(d => getFeatureUF(d));
 
-            g.selectAll("path")
-              .data(features)
-              .enter()
-              .append("path")
-              .attr("d", pathGenerator)
-              .attr("id", d => `state-${d.id || d.properties.sigla}`)
-              .attr("class", "real-state")
-              .attr("fill", d => {
-                const uf = d.id || d.properties.sigla;
-                return (statesData[uf] ? regionColors[statesData[uf].region] : "#10b981");
-              })
-              .on("mousemove", (event, d) => {
-                const uf = d.id || d.properties.sigla;
-                const state = statesData[uf];
-                showTooltip(event, `${state ? state.name : uf} (${uf})`);
-              })
-              .on("mouseout", hideTooltip)
-              .on("click", function(event, d) {
-                const uf = d.id || d.properties.sigla;
-                d3.select(this).attr("fill", selectedPaintColor);
-                d3.selectAll(".real-state").classed("real-state-selected", false);
-                d3.select(this).classed("real-state-selected", true);
-                selectState(uf);
-              });
+      document.getElementById("map-loading").classList.add("hidden");
+      document.getElementById("brazil-map").classList.remove("hidden");
 
-            // Adiciona a sigla no centroide geográfico de cada estado
-            g.selectAll("text")
-              .data(features)
-              .enter()
-              .append("text")
-              .attr("class", "state-sigla")
-              .attr("transform", d => {
-                const centroid = pathGenerator.centroid(d);
-                return `translate(${centroid[0]}, ${centroid[1]})`;
-              })
-              .text(d => d.id || d.properties.sigla);
+      // Seleção inicial
+      selectState("DF");
+    }
 
-            dataLoaded = true;
-            break;
-          }
-        } catch (e) {
-          console.warn("Tentando próxima fonte de dados geográficos...", e);
-        }
+    async function loadBrazilMap() {
+      try {
+        const response = await fetch(BRAZIL_STATES_GEOJSON, { cache: "force-cache" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const geojson = await response.json();
+        renderBrazilMap(geojson);
+      } catch (error) {
+        console.error("Não foi possível carregar o mapa:", error);
+        document.getElementById("map-loading").innerHTML =
+          "⚠️ Não foi possível carregar o mapa agora.<br><span class='text-xs font-normal'>Verifica a ligação à internet e recarrega a página.</span>";
       }
-
-      loading.classList.add("hidden");
     }
 
-    // 3. Funções da Paleta de Tintas
-    window.setCurrentColor = function(color, btnElement) {
-      selectedPaintColor = color;
-      document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('color-btn-active'));
-      if (btnElement) {
-        btnElement.classList.add('color-btn-active');
-      }
-    };
-
-    window.colorAllByRegion = function() {
-      Object.keys(statesData).forEach(uf => {
-        const path = d3.select(`#state-${uf}`);
-        if (!path.empty()) {
-          path.attr("fill", regionColors[statesData[uf].region]);
-        }
-      });
-    };
-
-    window.clearAllColors = function() {
-      d3.selectAll(".real-state").attr("fill", "#ffffff");
-    };
-
-    // 4. Tooltip
-    function showTooltip(event, text) {
-      const tooltip = document.getElementById('map-tooltip');
-      tooltip.innerText = text;
-      tooltip.style.left = `${event.pageX}px`;
-      tooltip.style.top = `${event.pageY - 10}px`;
-      tooltip.style.opacity = '1';
-    }
-
-    function hideTooltip() {
-      const tooltip = document.getElementById('map-tooltip');
-      tooltip.style.opacity = '0';
-    }
-
-    // 5. Painel de Informações do Estado
     window.selectState = function(uf) {
       const state = statesData[uf];
       if (!state) return;
 
+      // Destacar o polígono real do estado clicado.
+      document.querySelectorAll(".state-shape").forEach(el => {
+        el.classList.toggle("state-shape-active", el.dataset.uf === uf);
+      });
+
+      // Atualizar o Card de Detalhes.
       const card = document.getElementById("state-card");
-      card.className = `bg-white rounded-3xl p-6 shadow-md border-l-8 ${regionBorderColors[state.region]} transition-all`;
-      
+      card.className =
+        `bg-white rounded-3xl p-6 shadow-md border-l-8 ${regionBorderColors[state.region]} transition-all`;
+
       const badge = document.getElementById("state-badge-region");
-      badge.className = `text-xs uppercase font-bold tracking-wider px-3 py-1 rounded-full ${regionBgTags[state.region]}`;
+      badge.className =
+        `text-xs uppercase font-bold tracking-wider px-3 py-1 rounded-full ${regionBgTags[state.region]}`;
       badge.innerText = `Região ${state.region}`;
 
       document.getElementById("state-uf-badge").innerText = uf;
@@ -524,8 +483,8 @@
       const govInfo = document.getElementById("state-gov-info");
       if (uf === "DF") {
         govInfo.innerHTML = `
-          <p><b>👑 No Nível Federal:</b> Aqui no Distrito Federal trabalham o <b>Presidente da República</b>, os <b>Deputados Federais</b>, <b>Senadores</b> e os <b>Juízes do STF</b>, que cuidam de todo o Brasil.</p>
-          <p><b>🗺️ No Nível Distrital:</b> O Governador e os Deputados Distritais cuidam das escolas, polícia e saúde de todo o DF.</p>
+          <p><b>👑 No Nível Federal:</b> Aqui em Brasília trabalham o <b>Presidente da República</b>, os <b>Deputados Federais</b>, <b>Senadores</b> e os <b>Juízes do STF</b>, que cuidam de todo o Brasil.</p>
+          <p><b>🗺️ No Nível Distrital:</b> O Governador e os Deputados Distritais cuidam das escolas, polícia e hospitais de todo o DF.</p>
         `;
       } else {
         govInfo.innerHTML = `
@@ -533,9 +492,12 @@
           <p><b>🏙️ No Nível Municipal:</b> Cada cidade deste estado tem o seu próprio <b>Prefeito(a)</b> e <b>Vereadores</b> cuidando das ruas, postos de saúde e praças locais.</p>
         `;
       }
+
+      document.getElementById("state-curiosity").innerHTML =
+        `💡 <b>Curiosidade:</b> ${state.curiosity}`;
     };
 
-    // 6. Navegação das Abas
+    // 3. Controle das Abas
     window.setTab = function(tab) {
       ['mapa', 'poderes', 'quiz'].forEach(t => {
         document.getElementById(`section-${t}`).classList.add('hidden');
@@ -548,7 +510,7 @@
       activeBtn.className = 'tab-btn px-4 py-2 rounded-full font-bold text-sm transition shadow-sm bg-white text-emerald-700';
     };
 
-    // 7. Super Quiz
+    // 4. Super Quiz
     const quizQuestions = [
       {
         question: "Quem é o responsável por asfaltar a rua e cuidar da pracinha do teu bairro?",
@@ -643,11 +605,10 @@
       renderQuestion();
     };
 
-    // Inicialização
+    // Inicialização ao Carregar
     window.addEventListener('DOMContentLoaded', () => {
-      loadRealBrazilMap();
-      selectState('DF');
       renderQuestion();
+      loadBrazilMap();
     });
   </script>
 </body>
